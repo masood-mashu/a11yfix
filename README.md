@@ -1,3 +1,12 @@
+---
+title: A11yFix
+emoji: 🛠️
+colorFrom: blue
+colorTo: green
+sdk: docker
+app_file: app.py
+pinned: false
+---
 # 🚀 A11yFix — Web Accessibility Repair Lab
 
 ## 🎯 Overview
