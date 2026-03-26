@@ -6,21 +6,28 @@ def run_task():
         {"id": "img1", "type": "img", "attributes": {}}
     ]
 
-    env = A11yEnv(elements)
+    env = A11yEnv(elements, max_steps=5)
 
     state = env.reset()
-    done = False
 
-    while not done:
-        state, _, _, _ = env.step(("audit",))
+    VIOLATION_ATTR_MAP = {
+        "missing_alt": "alt",
+        "missing_label": "aria-label",
+        "missing_button_name": "text",
+        "missing_lang": "lang",
+    }
 
-        if not state["audit"]:
-            state, reward, done, _ = env.step(("done",))
-            break
+    # 🔍 Audit ONCE
+    state, _, _, _ = env.step(("audit",))
+    violations = state.get("audit", [])
 
-        v = state["audit"][0]
-        action = ("set_attribute", v["element_id"], v["fix"]["attr"], "fixed")
+    # 🔧 Fix blindly
+    for v in violations:
+        attr = VIOLATION_ATTR_MAP.get(v["type"])
+        if attr:
+            state, _, done, _ = env.step(("set_attribute", v["element_id"], attr, "fixed"))
 
-        state, _, done, _ = env.step(action)
+    # ✅ Finish
+    state, _, _, _ = env.step(("done",))
 
     return state["score"]

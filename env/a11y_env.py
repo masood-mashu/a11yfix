@@ -14,11 +14,10 @@ class A11yEnv:
 
         self.violations = detect_violations(self.elements)
         self.initial_violation_count = len(self.violations)
-        self.last_audit = []
 
         return self._get_state()
 
-    # ✅ NEW (OpenEnv compliance)
+    # ✅ OpenEnv compliance
     def state(self):
         return self._get_state()
 
@@ -27,8 +26,8 @@ class A11yEnv:
             "elements": self.elements,
             "score": self._compute_score(),
             "step_count": self.step_count,
-            "max_steps": self.max_steps,
-            "audit": self.last_audit
+            "max_steps": self.max_steps
+            # ❌ NO audit here (important)
         }
 
     def _compute_score(self):
@@ -67,7 +66,22 @@ class A11yEnv:
                 valid_action = False
 
         elif action_type == "audit":
-            self.last_audit = detect_violations(self.elements)
+            audit_result = detect_violations(self.elements)
+
+            # ✅ audit is ONLY returned for this step
+            state = self._get_state()
+            state["audit"] = audit_result
+
+            reward = compute_reward(
+                prev_violations,
+                prev_violations,  # no change
+                action_type,
+                True
+            )
+
+            info = {"violations": prev_violations}
+
+            return state, reward, done, info
 
         elif action_type == "done":
             done = True
@@ -89,7 +103,7 @@ class A11yEnv:
         if self.step_count >= self.max_steps:
             done = True
 
-        # ✅ NEW (info dict for compliance)
+        # ---------- INFO ----------
         info = {
             "violations": curr_violations
         }

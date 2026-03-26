@@ -1,27 +1,57 @@
 id: a11yfix
 name: A11yFix - Web Accessibility Repair Lab
-description: RL environment for detecting and fixing accessibility issues in a JSON DOM
+description: RL environment for repairing web accessibility violations in a JSON DOM
+
+version: "1.0.0"
 
 entry_point: env.a11y_env:A11yEnv
 
+# ---------- OBSERVATION SPACE ----------
 observation_space:
   type: object
   properties:
     elements:
       type: array
+      description: JSON DOM elements
     score:
       type: number
+      description: Accessibility score between 0 and 1
     step_count:
       type: integer
     max_steps:
       type: integer
-    audit:
-      type: array
 
+# ---------- ACTION SPACE ----------
 action_space:
-  type: tuple
-  description: Actions include setting attributes, auditing, and finishing
+  type: object
+  description: Tuple-based action system
+  actions:
+    - set_attribute
+    - audit
+    - done
 
+# ---------- REWARD ----------
 reward_range: [-1.0, 1.0]
 
+# ---------- GLOBAL SETTINGS ----------
 max_steps: 20
+
+# ---------- TASKS (CRITICAL) ----------
+tasks:
+  - id: easy
+    description: Fix a single missing alt text on an image
+    difficulty: easy
+    max_steps: 10
+    entry_point: tasks.easy:run_task
+
+  - id: medium
+    description: Fix mixed violations across multiple elements
+    difficulty: medium
+    max_steps: 15
+    entry_point: tasks.medium:run_task
+
+  - id: hard
+    description: Fix multiple violations with limited steps and dependencies
+    difficulty: hard
+    max_steps: 15
+    entry_point: tasks.hard:run_task

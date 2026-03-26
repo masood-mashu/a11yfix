@@ -1,3 +1,11 @@
+"""
+Violation detection module for A11yFix.
+
+NOTE:
+We intentionally DO NOT include fix instructions in violations.
+Agents must infer the correct fix from violation type.
+"""
+
 def detect_violations(elements):
     """
     Detect accessibility violations in a simplified JSON DOM.
@@ -30,11 +38,7 @@ def check_missing_alt(element_id, attributes):
     if not attributes.get("alt"):
         return [{
             "type": "missing_alt",
-            "element_id": element_id,
-            "fix": {
-                "action": "set_attribute",
-                "attr": "alt"
-            }
+            "element_id": element_id
         }]
     return []
 
@@ -45,11 +49,7 @@ def check_input_labels(element_id, attributes):
     if not has_label:
         return [{
             "type": "missing_label",
-            "element_id": element_id,
-            "fix": {
-                "action": "set_attribute",
-                "attr": "aria-label"
-            }
+            "element_id": element_id
         }]
     return []
 
@@ -61,14 +61,11 @@ def check_button_name(element_id, attributes):
     if not has_text:
         return [{
             "type": "missing_button_name",
-            "element_id": element_id,
-            "fix": {
-                "action": "set_attribute",
-                "attr": "text"
-            }
+            "element_id": element_id
         }]
 
     return []
+
 
 def check_lang(elements):
     for el in elements:
@@ -76,19 +73,19 @@ def check_lang(elements):
             if not el.get("attributes", {}).get("lang"):
                 return [{
                     "type": "missing_lang",
-                    "element_id": el["id"],
-                    "fix": {
-                        "action": "set_attribute",
-                        "attr": "lang"
-                    }
+                    "element_id": el["id"]
                 }]
     return []
+
+
+# ---------- TEST ----------
 
 if __name__ == "__main__":
     elements = [
         {"id": "img1", "type": "img", "attributes": {}},
         {"id": "input1", "type": "input", "attributes": {}},
-        {"id": "btn1", "type": "button", "attributes": {}}
+        {"id": "btn1", "type": "button", "attributes": {}},
+        {"id": "root", "type": "html", "attributes": {}}
     ]
 
     violations = detect_violations(elements)

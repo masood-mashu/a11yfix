@@ -1,28 +1,48 @@
 from env.a11y_env import A11yEnv
 
 
-def run_task():
-    elements = [
-        {"id": "root", "type": "html", "attributes": {}},
-        {"id": "img1", "type": "img", "attributes": {}},
-        {"id": "btn1", "type": "button", "attributes": {}}
+def get_hard_elements():
+    return [
+        {"id": "root",   "type": "html",   "attributes": {}},
+
+        {"id": "img1",   "type": "img",    "attributes": {}},
+        {"id": "img2",   "type": "img",    "attributes": {}},
+        {"id": "img3",   "type": "img",    "attributes": {}},
+
+        {"id": "btn1",   "type": "button", "attributes": {}},
+        {"id": "btn2",   "type": "button", "attributes": {}},
+
+        {"id": "input1", "type": "input",  "attributes": {}},
+        {"id": "input2", "type": "input",  "attributes": {}},
     ]
 
-    env = A11yEnv(elements)
+
+def run_task():
+    elements = get_hard_elements()
+
+    # 🔥 very tight steps → baseline struggles
+    env = A11yEnv(elements, max_steps=7)
 
     state = env.reset()
-    done = False
 
-    while not done:
-        state, _, _, _ = env.step(("audit",))
+    VIOLATION_ATTR_MAP = {
+        "missing_alt": "alt",
+        "missing_label": "aria-label",
+        "missing_button_name": "text",
+        "missing_lang": "lang",
+    }
 
-        if not state["audit"]:
-            state, reward, done, _ = env.step(("done",))
-            break
+    # 🔍 Audit ONCE
+    state, _, _, _ = env.step(("audit",))
+    violations = state.get("audit", [])
 
-        v = state["audit"][0]
-        action = ("set_attribute", v["element_id"], v["fix"]["attr"], "fixed")
+    # 🔧 Fix blindly (will likely run out of steps)
+    for v in violations:
+        attr = VIOLATION_ATTR_MAP.get(v["type"])
+        if attr:
+            state, _, done, _ = env.step(("set_attribute", v["element_id"], attr, "fixed"))
 
-        state, _, done, _ = env.step(action)
+    # ✅ Finish
+    state, _, _, _ = env.step(("done",))
 
     return state["score"]

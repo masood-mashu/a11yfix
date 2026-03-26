@@ -1,38 +1,57 @@
-from env.a11y_env import A11yEnv
-
-
 class BaselineAgent:
+    """
+    Simple rule-based baseline agent.
+
+    Behavior:
+    - Audits ONLY once
+    - Fixes violations in order
+    - Does NOT re-audit
+    - May run out of steps on harder tasks
+
+    This creates meaningful score differences across tasks.
+    """
+
     def __init__(self, env):
         self.env = env
 
     def run(self):
         state = self.env.reset()
-        print("Initial State:", state)
-
         done = False
+        total_reward = 0
 
-        while not done:
-            # Step 1: audit
-            state, reward, done, _ = self.env.step(("audit",))
-            print("\nAudit:", state["audit"], "Reward:", reward)
+        # 🔍 Step 1: Audit ONCE
+        state, reward, done, _ = self.env.step(("audit",))
+        total_reward += reward
 
-            violations = state["audit"]
+        violations = state.get("audit", [])
 
-            if not violations:
-                state, reward, done, _ = self.env.step(("done",))
-                print("\nDone. Reward:", reward)
+        # Mapping: violation → attribute
+        VIOLATION_ATTR_MAP = {
+            "missing_alt": "alt",
+            "missing_label": "aria-label",
+            "missing_button_name": "text",
+            "missing_lang": "lang",
+        }
+
+        # 🔧 Step 2: Fix in order (no re-audit)
+        for v in violations:
+            if done:
                 break
 
-            # Step 2: fix first violation
-            v = violations[0]
-            element_id = v["element_id"]
-            attr = v["fix"]["attr"]
+            attr = VIOLATION_ATTR_MAP.get(v["type"])
 
-            # simple value
-            value = "fixed"
+            if attr:
+                action = ("set_attribute", v["element_id"], attr, "fixed")
+                state, reward, done, _ = self.env.step(action)
+                total_reward += reward
 
-            action = ("set_attribute", element_id, attr, value)
-            state, reward, done, _ = self.env.step(action)
+        # ✅ Step 3: Finish
+        if not done:
+            state, reward, done, _ = self.env.step(("done",))
+            total_reward += reward
 
-            print(f"\nFixing {v['type']} →", action)
-            print("Score:", state["score"], "Reward:", reward)
+        return {
+            "score": state["score"],
+            "total_reward": round(total_reward, 3),
+            "steps": state["step_count"]
+        }
