@@ -1,0 +1,27 @@
+id: a11yfix
+name: A11yFix - Web Accessibility Repair Lab
+description: RL environment for detecting and fixing accessibility issues in a JSON DOM
+
+entry_point: env.a11y_env:A11yEnv
+
+observation_space:
+  type: object
+  properties:
+    elements:
+      type: array
+    score:
+      type: number
+    step_count:
+      type: integer
+    max_steps:
+      type: integer
+    audit:
+      type: array
+
+action_space:
+  type: tuple
+  description: Actions include setting attributes, auditing, and finishing
+
+reward_range: [-1.0, 1.0]
+
+max_steps: 20
