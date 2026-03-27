@@ -28,11 +28,54 @@ Agents interact through a small action API and are scored by how many violations
 - `audit()`
 - `done()`
 
+## Action space (formal)
+
+- Type: discrete operation + optional string arguments
+- Canonical shape (OpenEnv `A11yAction`):
+	- `operation: str`
+	- `element_id: str = ""`
+	- `attribute: str = ""`
+	- `value: str = ""`
+- Valid operations:
+	- `audit`
+	- `set_attribute`
+	- `done`
+
+Examples:
+
+```json
+{ "operation": "audit" }
+```
+
+```json
+{ "operation": "set_attribute", "element_id": "img1", "attribute": "alt", "value": "Company logo" }
+```
+
+```json
+{ "operation": "done" }
+```
+
 ## Observability model
 
 - Violations are not included in normal observations.
 - Violations are returned only in `audit` action responses.
 - Element structure and attributes remain visible as part of the state.
+
+## Observation space (formal)
+
+- OpenEnv response payload includes:
+	- `observation.elements: list[dict]`
+	- `observation.score: float` (normalized, `0.0` to `1.0`)
+	- `observation.step_count: int`
+	- `observation.max_steps: int`
+	- `observation.audit: list` (non-empty only for `audit` action)
+	- `reward: float`
+	- `done: bool`
+
+Notes:
+
+- `audit` exposes hidden violations but consumes one environment step.
+- `done` can terminate early; final score is based on violation reduction.
 
 ## Violation types currently modeled
 
@@ -66,6 +109,35 @@ Custom project endpoints:
 - `GET /tasks`: task list + action schema
 - `GET /baseline`: baseline run across easy/medium/hard tasks
 - `POST /grader`: score a submitted action sequence
+
+## Tasks and difficulty
+
+| Task | Violations at reset | Step budget | Difficulty intent |
+|---|---:|---:|---|
+| Easy | 1 | 8 | Basic single-fix flow |
+| Medium | 3 | 3 | Tight budget, requires efficient sequence |
+| Hard | 8 | 8 | Multi-element repair under full-budget pressure |
+
+Current task sources:
+
+- `tasks/easy.py`
+- `tasks/medium.py`
+- `tasks/hard.py`
+
+## Baseline scores (current)
+
+`GET /baseline` and `python -m tasks.run_all_tasks` currently report:
+
+| Task | Score | Steps used |
+|---|---:|---:|
+| Easy | 1.0 | 1 |
+| Medium | 1.0 | 3 |
+| Hard | 1.0 | 8 |
+
+Interpretation:
+
+- Baseline uses a task-aware optimal strategy for this benchmark configuration.
+- Medium and hard still remain useful for model evaluation because generic agents can waste steps (for example, unnecessary audit or incorrect attribute guesses).
 
 ### `/grader` payload examples (current schema)
 
