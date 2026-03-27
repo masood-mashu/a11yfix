@@ -4,7 +4,7 @@ description: RL environment for repairing web accessibility violations in a JSON
 
 version: "1.0.0"
 
-entry_point: env.a11y_env:A11yEnv
+entry_point: env.a11y_env:create_default_env
 
 # ---------- OBSERVATION SPACE ----------
 observation_space:

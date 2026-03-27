@@ -171,3 +171,10 @@ class A11yEnv(A11yEnvironmentBase):
             self._terminated = True
         self._last_observation = obs
         return obs
+
+
+def create_default_env() -> "A11yEnv":
+    from tasks.hard import MAX_STEPS as HARD_MAX_STEPS
+    from tasks.hard import get_hard_elements
+
+    return A11yEnv(get_hard_elements(), max_steps=HARD_MAX_STEPS)

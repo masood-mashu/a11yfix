@@ -54,6 +54,13 @@ OpenEnv app:
 
 - Standard OpenEnv endpoints are provided by `create_fastapi_app(...)`.
 
+`POST /step` payloads accepted:
+
+- Canonical OpenEnv shape: `{ "action": { "operation": "audit" } }` — **used by OpenAPI schema and standard clients**
+- Backward-compatible flat shape: `{ "operation": "audit" }` — compatibility layer for simplified payloads
+
+_Note: The OpenAPI schema (`/openapi.json`) reflects the canonical form. Flat payloads are supported at runtime but not exposed in the OpenAPI schema._
+
 Custom project endpoints:
 
 - `GET /tasks`: task list + action schema

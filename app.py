@@ -1,6 +1,9 @@
+import json
+
 from fastapi import HTTPException
 from openenv.core import create_fastapi_app
 from pydantic import AliasChoices, BaseModel, ConfigDict, Field
+from starlette.types import ASGIApp, Message, Receive, Scope, Send
 
 from env.a11y_env import A11yAction, A11yEnv, A11yObservation
 
@@ -16,6 +19,77 @@ app = create_fastapi_app(
     action_cls=A11yAction,
     observation_cls=A11yObservation,
 )
+
+
+def _normalize_step_payload(payload: dict) -> dict:
+    action_payload = {
+        "operation": payload.get("operation", ""),
+        "element_id": payload.get("element_id", payload.get("target", "")),
+        "attribute": payload.get("attribute", ""),
+        "value": payload.get("value", ""),
+    }
+
+    normalized_payload = dict(payload)
+    normalized_payload.pop("operation", None)
+    normalized_payload.pop("element_id", None)
+    normalized_payload.pop("target", None)
+    normalized_payload.pop("attribute", None)
+    normalized_payload.pop("value", None)
+    normalized_payload["action"] = action_payload
+    return normalized_payload
+
+
+class StepPayloadCompatibilityMiddleware:
+    def __init__(self, app: ASGIApp):
+        self.app = app
+
+    async def __call__(self, scope: Scope, receive: Receive, send: Send):
+        if scope.get("type") != "http":
+            await self.app(scope, receive, send)
+            return
+
+        if scope.get("method") != "POST" or scope.get("path", "").rstrip("/") != "/step":
+            await self.app(scope, receive, send)
+            return
+
+        headers = {k.decode("latin-1").lower(): v.decode("latin-1") for k, v in scope.get("headers", [])}
+        content_type = headers.get("content-type", "")
+        if "application/json" not in content_type:
+            await self.app(scope, receive, send)
+            return
+
+        body = b""
+        while True:
+            message = await receive()
+            if message["type"] != "http.request":
+                break
+            body += message.get("body", b"")
+            if not message.get("more_body", False):
+                break
+
+        normalized_body = body
+        if body:
+            try:
+                payload = json.loads(body)
+            except json.JSONDecodeError:
+                payload = None
+
+            if isinstance(payload, dict) and "action" not in payload and "operation" in payload:
+                normalized_body = json.dumps(_normalize_step_payload(payload)).encode("utf-8")
+
+        sent = False
+
+        async def normalized_receive() -> Message:
+            nonlocal sent
+            if sent:
+                return {"type": "http.request", "body": b"", "more_body": False}
+            sent = True
+            return {"type": "http.request", "body": normalized_body, "more_body": False}
+
+        await self.app(scope, normalized_receive, send)
+
+
+app.add_middleware(StepPayloadCompatibilityMiddleware)
 
 
 class GradeAction(BaseModel):
