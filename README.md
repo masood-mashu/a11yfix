@@ -11,7 +11,6 @@ Here’s your **judge-optimized, clean, ready-to-paste README.md** 👇
 
 ---
 
-```markdown
 # 🚀 A11yFix — Web Accessibility Repair Lab (OpenEnv)
 
 A11yFix is a reinforcement learning environment where agents repair real-world web accessibility issues in a partially observable DOM.
@@ -141,8 +140,6 @@ GET /grader
 {
   "action": "audit"
 }
-```
-
 ---
 
 ## 🏗️ Tech Stack
@@ -194,7 +191,5 @@ This creates a realistic environment for training agents to actively repair web 
 Built as part of the **Meta PyTorch OpenEnv Hackathon**.
 
 ---
-
-```
 
 ---

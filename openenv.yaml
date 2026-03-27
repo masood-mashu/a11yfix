@@ -41,17 +41,17 @@ tasks:
   - id: easy
     description: Fix a single missing alt text on an image
     difficulty: easy
-    max_steps: 10
+    max_steps: 8
     entry_point: tasks.easy:run_task
 
   - id: medium
     description: Fix mixed violations across multiple elements
     difficulty: medium
-    max_steps: 15
+    max_steps: 6
     entry_point: tasks.medium:run_task
 
   - id: hard
     description: Fix multiple violations with limited steps and dependencies
     difficulty: hard
-    max_steps: 15
+    max_steps: 12
     entry_point: tasks.hard:run_task

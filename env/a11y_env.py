@@ -1,34 +1,70 @@
-from env.violations import detect_violations
+from typing import Any
+
+from openenv.core import Action, Environment, Observation, State
+from pydantic import Field
+
 from env.reward import compute_reward
+from env.violations import detect_violations
 
 
-class A11yEnv:
+class A11yAction(Action):
+    operation: str
+    element_id: str = ""
+    attribute: str = ""
+    value: str = ""
+
+
+class A11yObservation(Observation):
+    elements: list[dict]
+    score: float
+    step_count: int
+    max_steps: int
+    audit: list = Field(default_factory=list)
+
+    # Backward-compatible helpers for existing dict-like call sites.
+    def get(self, key: str, default: Any = None) -> Any:
+        return getattr(self, key, default)
+
+    def __getitem__(self, key: str) -> Any:
+        return getattr(self, key)
+
+
+try:
+    A11yEnvironmentBase = Environment[A11yAction, A11yObservation]
+except TypeError:
+    A11yEnvironmentBase = Environment[A11yAction, A11yObservation, State]
+
+
+class A11yEnv(A11yEnvironmentBase):
     def __init__(self, elements, max_steps=20):
+        super().__init__()
         self.initial_elements = elements
         self.max_steps = max_steps
         self.reset()
 
-    def reset(self):
+    def reset(self, seed=None, episode_id=None, **kwargs) -> A11yObservation:
         self.elements = [el.copy() for el in self.initial_elements]
         self.step_count = 0
 
         self.violations = detect_violations(self.elements)
         self.initial_violation_count = len(self.violations)
 
-        return self._get_state()
+        self._last_observation = self._get_observation()
+        return self._last_observation
 
-    # ✅ OpenEnv compliance
-    def state(self):
-        return self._get_state()
+    def state(self) -> A11yObservation:
+        return self._get_observation(done=False, reward=None, audit=[])
 
-    def _get_state(self):
-        return {
-            "elements": self.elements,
-            "score": self._compute_score(),
-            "step_count": self.step_count,
-            "max_steps": self.max_steps
-            # ❌ NO audit here (important)
-        }
+    def _get_observation(self, done: bool = False, reward=None, audit=None) -> A11yObservation:
+        return A11yObservation(
+            elements=self.elements,
+            score=self._compute_score(),
+            step_count=self.step_count,
+            max_steps=self.max_steps,
+            audit=audit or [],
+            done=done,
+            reward=reward,
+        )
 
     def _compute_score(self):
         current = len(detect_violations(self.elements))
@@ -38,50 +74,67 @@ class A11yEnv:
 
         return round(
             (self.initial_violation_count - current) / self.initial_violation_count,
-            2
+            2,
         )
 
-    def step(self, action):
+    def _normalize_action(self, action: A11yAction) -> A11yAction:
+        if isinstance(action, A11yAction):
+            return action
+
+        if isinstance(action, tuple) and len(action) > 0:
+            operation = action[0]
+            if operation == "set_attribute":
+                element_id = action[1] if len(action) > 1 else ""
+                attribute = action[2] if len(action) > 2 else ""
+                value = action[3] if len(action) > 3 else ""
+                return A11yAction(
+                    operation=operation,
+                    element_id=element_id,
+                    attribute=attribute,
+                    value=value,
+                )
+
+            if operation in {"audit", "done"}:
+                return A11yAction(operation=operation)
+
+        return A11yAction(operation="invalid")
+
+    def step(self, action: A11yAction, **kwargs) -> A11yObservation:
+        action = self._normalize_action(action)
         self.step_count += 1
 
         done = False
-        action_type = action[0]
+        action_type = action.operation
 
         prev_violations = len(detect_violations(self.elements))
         valid_action = True
 
-        # ---------- ACTION HANDLING ----------
-
         if action_type == "set_attribute":
-            _, element_id, attr, value = action
-
             found = False
 
             for el in self.elements:
-                if el["id"] == element_id:
+                if el["id"] == action.element_id:
                     found = True
-                    el.setdefault("attributes", {})[attr] = value
+                    el.setdefault("attributes", {})[action.attribute] = action.value
 
             if not found:
                 valid_action = False
 
         elif action_type == "audit":
             audit_result = detect_violations(self.elements)
-
-            # ✅ audit is ONLY returned for this step
-            state = self._get_state()
-            state["audit"] = audit_result
-
             reward = compute_reward(
                 prev_violations,
-                prev_violations,  # no change
+                prev_violations,
                 action_type,
-                True
+                True,
             )
 
-            info = {"violations": prev_violations}
+            if self.step_count >= self.max_steps:
+                done = True
 
-            return state, reward, done, info
+            obs = self._get_observation(done=done, reward=reward, audit=audit_result)
+            self._last_observation = obs
+            return obs
 
         elif action_type == "done":
             done = True
@@ -91,21 +144,16 @@ class A11yEnv:
 
         curr_violations = len(detect_violations(self.elements))
 
-        # ---------- REWARD ----------
         reward = compute_reward(
             prev_violations,
             curr_violations,
             action_type,
-            valid_action
+            valid_action,
         )
 
-        # ---------- TERMINATION ----------
         if self.step_count >= self.max_steps:
             done = True
 
-        # ---------- INFO ----------
-        info = {
-            "violations": curr_violations
-        }
-
-        return self._get_state(), reward, done, info
+        obs = self._get_observation(done=done, reward=reward, audit=[])
+        self._last_observation = obs
+        return obs

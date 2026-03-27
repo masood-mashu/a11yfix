@@ -1,4 +1,4 @@
-from env.a11y_env import A11yEnv
+from env.a11y_env import A11yAction, A11yEnv
 
 
 MAX_STEPS = 8
@@ -15,7 +15,7 @@ def run_task():
 
     env = A11yEnv(elements, max_steps=MAX_STEPS)
 
-    state = env.reset()
+    observation = env.reset()
 
     VIOLATION_ATTR_MAP = {
         "missing_alt": "alt",
@@ -25,19 +25,30 @@ def run_task():
     }
 
     # 🔍 Audit ONCE
-    state, _, _, _ = env.step(("audit",))
-    violations = state.get("audit", [])
+    observation = env.step(A11yAction(operation="audit"))
+    violations = observation.audit
 
     # 🔧 Fix blindly
-    for v in violations:
+    i = 0
+    while not observation.done and i < len(violations):
+        v = violations[i]
+        i += 1
         attr = VIOLATION_ATTR_MAP.get(v["type"])
         if attr:
-            state, _, done, _ = env.step(("set_attribute", v["element_id"], attr, "fixed"))
+            observation = env.step(
+                A11yAction(
+                    operation="set_attribute",
+                    element_id=v["element_id"],
+                    attribute=attr,
+                    value="fixed",
+                )
+            )
 
     # ✅ Finish
-    state, _, _, _ = env.step(("done",))
+    if not observation.done:
+        observation = env.step(A11yAction(operation="done"))
 
     return {
-        "score": state["score"],
-        "steps": state["step_count"],
+        "score": observation.score,
+        "steps": observation.step_count,
     }
