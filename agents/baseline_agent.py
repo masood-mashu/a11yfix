@@ -1,3 +1,6 @@
+from env.a11y_env import A11yAction
+
+
 class BaselineAgent:
     """
     Simple rule-based baseline agent.
@@ -15,15 +18,14 @@ class BaselineAgent:
         self.env = env
 
     def run(self):
-        state = self.env.reset()
-        done = False
+        observation = self.env.reset()
         total_reward = 0
 
         # 🔍 Step 1: Audit ONCE
-        state, reward, done, _ = self.env.step(("audit",))
-        total_reward += reward
+        observation = self.env.step(A11yAction(operation="audit"))
+        total_reward += float(observation.reward or 0.0)
 
-        violations = state.get("audit", [])
+        violations = observation.audit
 
         # Mapping: violation → attribute
         VIOLATION_ATTR_MAP = {
@@ -35,23 +37,28 @@ class BaselineAgent:
 
         # 🔧 Step 2: Fix in order (no re-audit)
         for v in violations:
-            if done:
+            if observation.done:
                 break
 
             attr = VIOLATION_ATTR_MAP.get(v["type"])
 
             if attr:
-                action = ("set_attribute", v["element_id"], attr, "fixed")
-                state, reward, done, _ = self.env.step(action)
-                total_reward += reward
+                action = A11yAction(
+                    operation="set_attribute",
+                    element_id=v["element_id"],
+                    attribute=attr,
+                    value="fixed",
+                )
+                observation = self.env.step(action)
+                total_reward += float(observation.reward or 0.0)
 
         # ✅ Step 3: Finish
-        if not done:
-            state, reward, done, _ = self.env.step(("done",))
-            total_reward += reward
+        if not observation.done:
+            observation = self.env.step(A11yAction(operation="done"))
+            total_reward += float(observation.reward or 0.0)
 
         return {
-            "score": state["score"],
+            "score": observation.score,
             "total_reward": round(total_reward, 3),
-            "steps": state["step_count"]
+            "steps": observation.step_count,
         }

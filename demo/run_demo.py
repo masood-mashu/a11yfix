@@ -1,5 +1,4 @@
-import time
-from env.a11y_env import A11yEnv
+from env.a11y_env import A11yAction, A11yEnv
 
 
 def pretty_print(title, data):
@@ -24,14 +23,13 @@ env = A11yEnv(elements)
 
 print("\n🚀 A11yFix Demo Starting...\n")
 
-state = env.reset()
+obs = env.reset()
 
-pretty_print("Initial State", state)
+pretty_print("Initial State", obs)
 
 print("\n🧾 Initial DOM:")
-print_elements(state["elements"])
+print_elements(obs.elements)
 
-done = False
 tried_wrong = False   # 👈 ensures wrong action runs only once
 VIOLATION_ATTR_MAP = {
     "missing_alt": "alt",
@@ -40,43 +38,53 @@ VIOLATION_ATTR_MAP = {
     "missing_lang": "lang",
 }
 
-while not done:
+while not obs.done:
 
     # ---------- AUDIT ----------
-    state, reward, done, _ = env.step(("audit",))
-    pretty_print("🔍 Audit Result", state["audit"])
-    print("Reward:", reward)
+    obs = env.step(A11yAction(operation="audit"))
+    pretty_print("🔍 Audit Result", obs.audit)
+    print("Reward:", obs.reward)
 
-    if not state["audit"]:
-        state, reward, done, _ = env.step(("done",))
-        print("\n✅ DONE — Final Reward:", reward)
+    if not obs.audit:
+        obs = env.step(A11yAction(operation="done"))
+        print("\n✅ DONE — Final Reward:", obs.reward)
 
         print("\n📊 Summary:")
-        print(f"Steps taken: {state['step_count']}")
-        print(f"Final Score: {state['score']}")
+        print(f"Steps taken: {obs.step_count}")
+        print(f"Final Score: {obs.score}")
         break
 
-    v = state["audit"][0]
+    v = obs.audit[0]
 
     # ---------- WRONG ACTION (ONLY ONCE) ----------
     if v["type"] == "missing_button_name" and not tried_wrong:
-        wrong_action = ("set_attribute", v["element_id"], "aria-label", "wrong")
+        wrong_action = A11yAction(
+            operation="set_attribute",
+            element_id=v["element_id"],
+            attribute="aria-label",
+            value="wrong",
+        )
 
-        state, reward, done, _ = env.step(wrong_action)
+        obs = env.step(wrong_action)
 
         print("\n❌ Trying WRONG fix →", wrong_action)
-        print("📈 Score:", state["score"], "| Reward:", reward)
+        print("📈 Score:", obs.score, "| Reward:", obs.reward)
 
         tried_wrong = True
         continue   # 👈 go back to audit again
 
     # ---------- CORRECT ACTION ----------
-    action = ("set_attribute", v["element_id"], VIOLATION_ATTR_MAP[v["type"]], "fixed")
+    action = A11yAction(
+        operation="set_attribute",
+        element_id=v["element_id"],
+        attribute=VIOLATION_ATTR_MAP[v["type"]],
+        value="fixed",
+    )
 
-    state, reward, done, _ = env.step(action)
+    obs = env.step(action)
 
     print(f"\n🔧 Fixing {v['type']} → {action}")
-    print("📈 Score:", state["score"], "| Reward:", reward)
+    print("📈 Score:", obs.score, "| Reward:", obs.reward)
 
     print("\n🧾 Updated DOM:")
-    print_elements(state["elements"])
+    print_elements(obs.elements)

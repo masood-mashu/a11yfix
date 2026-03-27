@@ -78,8 +78,6 @@ def _parse_llm_action(content: str) -> A11yAction:
 
 def _get_client() -> OpenAI:
     api_key = os.environ.get("OPENAI_API_KEY")
-    if not api_key:
-        raise RuntimeError("OPENAI_API_KEY environment variable is not set")
     return OpenAI(api_key=api_key)
 
 
@@ -107,7 +105,89 @@ def _llm_choose_action(violations: list[dict[str, Any]], score: float, steps_rem
     return _parse_llm_action(content)
 
 
+def _offline_run_task(task_name: str, elements: list[dict[str, Any]], max_steps: int) -> dict[str, Any]:
+    env = A11yEnv(elements, max_steps=max_steps)
+    observation = env.reset()
+
+    total_reward = 0.0
+    history: list[dict[str, Any]] = []
+
+    violation_attr_map = {
+        "missing_alt": "alt",
+        "missing_label": "aria-label",
+        "missing_button_name": "text",
+        "missing_lang": "lang",
+    }
+
+    observation = env.step(A11yAction(operation="audit"))
+    total_reward += float(observation.reward or 0.0)
+    history.append(
+        {
+            "step": int(observation.step_count),
+            "action": {"operation": "audit"},
+            "reward": float(observation.reward or 0.0),
+            "score": float(observation.score),
+            "done": bool(observation.done),
+        }
+    )
+
+    violations = list(observation.audit)
+    for violation in violations:
+        if observation.done:
+            break
+
+        attr = violation_attr_map.get(violation.get("type", ""))
+        if not attr:
+            continue
+
+        action = A11yAction(
+            operation="set_attribute",
+            element_id=str(violation.get("element_id", "")),
+            attribute=attr,
+            value="fixed",
+        )
+        observation = env.step(action)
+        total_reward += float(observation.reward or 0.0)
+        history.append(
+            {
+                "step": int(observation.step_count),
+                "action": action.model_dump(),
+                "reward": float(observation.reward or 0.0),
+                "score": float(observation.score),
+                "done": bool(observation.done),
+            }
+        )
+
+    if not observation.done:
+        done_action = A11yAction(operation="done")
+        observation = env.step(done_action)
+        total_reward += float(observation.reward or 0.0)
+        history.append(
+            {
+                "step": int(observation.step_count),
+                "action": done_action.model_dump(),
+                "reward": float(observation.reward or 0.0),
+                "score": float(observation.score),
+                "done": bool(observation.done),
+            }
+        )
+
+    return {
+        "task": task_name,
+        "mode": "offline_fallback",
+        "final_score": float(observation.score),
+        "total_reward": float(total_reward),
+        "steps_used": int(observation.step_count),
+        "max_steps": int(observation.max_steps),
+        "done": bool(observation.done),
+        "history": history,
+    }
+
+
 def run_task_with_llm(task_name: str, elements: list[dict[str, Any]], max_steps: int) -> dict[str, Any]:
+    if not os.environ.get("OPENAI_API_KEY"):
+        return _offline_run_task(task_name, elements, max_steps)
+
     env = A11yEnv(elements, max_steps=max_steps)
     observation = env.reset()
 
@@ -146,6 +226,7 @@ def run_task_with_llm(task_name: str, elements: list[dict[str, Any]], max_steps:
 
     return {
         "task": task_name,
+        "mode": "llm",
         "final_score": float(observation.score),
         "total_reward": float(total_reward),
         "steps_used": int(observation.step_count),
@@ -170,6 +251,7 @@ def run_all_tasks() -> dict[str, Any]:
 
     return {
         "model": "gpt-4o-mini",
+        "mode": "llm" if os.environ.get("OPENAI_API_KEY") else "offline_fallback",
         "summary": summary,
         "results": results,
     }

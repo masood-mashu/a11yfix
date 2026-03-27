@@ -1,6 +1,6 @@
 from fastapi import HTTPException
 from openenv.core import create_fastapi_app
-from pydantic import BaseModel
+from pydantic import AliasChoices, BaseModel, ConfigDict, Field
 
 from env.a11y_env import A11yAction, A11yEnv, A11yObservation
 
@@ -19,14 +19,18 @@ app = create_fastapi_app(
 
 
 class GradeAction(BaseModel):
-    action: str
-    target: str = ""
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+
+    action: str = Field(validation_alias=AliasChoices("action", "type", "operation"))
+    target: str = Field(default="", validation_alias=AliasChoices("target", "element_id"))
     attribute: str = ""
     value: str = ""
 
 
 class GradeRequest(BaseModel):
-    task: str
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
+
+    task: str = Field(validation_alias=AliasChoices("task", "task_id"))
     actions: list[GradeAction]
 
 

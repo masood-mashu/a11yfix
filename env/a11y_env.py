@@ -56,10 +56,12 @@ class A11yEnv(A11yEnvironmentBase):
         self._last_observation = self._get_observation()
         return self._last_observation
 
+    @property
     def state(self) -> A11yObservation:
-        return self._get_observation(done=self._terminated, reward=None, audit=[])
+        return self._get_observation(done=self._terminated, reward=0.0, audit=[])
 
     def _get_observation(self, done: bool = False, reward=None, audit=None) -> A11yObservation:
+        reward_value = 0.0 if reward is None else float(reward)
         return A11yObservation(
             elements=deepcopy(self.elements),
             score=self._compute_score(),
@@ -67,7 +69,7 @@ class A11yEnv(A11yEnvironmentBase):
             max_steps=self.max_steps,
             audit=deepcopy(audit or []),
             done=done,
-            reward=reward,
+            reward=reward_value,
         )
 
     def _compute_score(self):

@@ -84,7 +84,7 @@ Valid example (returns `200`):
 }
 ```
 
-Invalid example (returns `422` because field names do not match current schema):
+Alias-compatible example (also returns `200`):
 
 ```json
 {
@@ -103,10 +103,26 @@ Invalid example (returns `422` because field names do not match current schema):
 }
 ```
 
+Truly invalid example (returns `422`, missing required action field):
+
+```json
+{
+	"task": "easy",
+	"actions": [
+		{
+			"target": "img1",
+			"attribute": "alt",
+			"value": "A scenic mountain view"
+		}
+	]
+}
+```
+
 ## Local run
 
 ```bash
-python app.py
+python -m uvicorn app:app --host 0.0.0.0 --port 7860
+uvicorn app:app --host 0.0.0.0 --port 7860
 ```
 
 ## Useful checks
@@ -114,8 +130,8 @@ python app.py
 ```bash
 python test_env.py
 python -m tasks.run_all_tasks
-python agents/baseline_agent.py
 python demo/run_demo.py
+python baseline_inference.py
 ```
 
 ## Docker
