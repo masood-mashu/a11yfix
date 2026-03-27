@@ -35,5 +35,3 @@ def compute_reward(prev_violations, curr_violations, action_type, valid_action=T
         return -0.05  # no-op
     else:
         return -0.5   # regression
-
-    return 0
