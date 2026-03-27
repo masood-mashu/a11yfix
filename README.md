@@ -144,7 +144,3 @@ docker run -p 7860:7860 a11yfix
 ## Why this project is useful
 
 A11yFix turns accessibility from static detection into sequential decision-making, making it a practical benchmark for repair-oriented agents.
-
-## Hackathon context
-
-Built for the Meta PyTorch OpenEnv Hackathon.
