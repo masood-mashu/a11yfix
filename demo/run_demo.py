@@ -33,6 +33,12 @@ print_elements(state["elements"])
 
 done = False
 tried_wrong = False   # 👈 ensures wrong action runs only once
+VIOLATION_ATTR_MAP = {
+    "missing_alt": "alt",
+    "missing_label": "aria-label",
+    "missing_button_name": "text",
+    "missing_lang": "lang",
+}
 
 while not done:
 
@@ -65,7 +71,7 @@ while not done:
         continue   # 👈 go back to audit again
 
     # ---------- CORRECT ACTION ----------
-    action = ("set_attribute", v["element_id"], v["fix"]["attr"], "fixed")
+    action = ("set_attribute", v["element_id"], VIOLATION_ATTR_MAP[v["type"]], "fixed")
 
     state, reward, done, _ = env.step(action)
 

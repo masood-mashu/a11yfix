@@ -1,15 +1,22 @@
 from env.a11y_env import A11yEnv
 
 
-def run_task():
-    elements = [
+MAX_STEPS = 6
+
+
+def get_medium_elements():
+    return [
         {"id": "img1", "type": "img", "attributes": {}},
         {"id": "btn1", "type": "button", "attributes": {}},
         {"id": "input1", "type": "input", "attributes": {}}
     ]
 
+
+def run_task():
+    elements = get_medium_elements()
+
     # 🔥 tighter steps → creates imperfection
-    env = A11yEnv(elements, max_steps=4)
+    env = A11yEnv(elements, max_steps=MAX_STEPS)
 
     state = env.reset()
 
@@ -33,4 +40,7 @@ def run_task():
     # ✅ Finish
     state, _, _, _ = env.step(("done",))
 
-    return state["score"]
+    return {
+        "score": state["score"],
+        "steps": state["step_count"],
+    }

@@ -1,6 +1,9 @@
 from env.a11y_env import A11yEnv
 
 
+MAX_STEPS = 12
+
+
 def get_hard_elements():
     return [
         {"id": "root",   "type": "html",   "attributes": {}},
@@ -21,7 +24,7 @@ def run_task():
     elements = get_hard_elements()
 
     # 🔥 very tight steps → baseline struggles
-    env = A11yEnv(elements, max_steps=7)
+    env = A11yEnv(elements, max_steps=MAX_STEPS)
 
     state = env.reset()
 
@@ -45,4 +48,7 @@ def run_task():
     # ✅ Finish
     state, _, _, _ = env.step(("done",))
 
-    return state["score"]
+    return {
+        "score": state["score"],
+        "steps": state["step_count"],
+    }

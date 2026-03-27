@@ -3,9 +3,9 @@ from pydantic import BaseModel
 from typing import List, Dict, Optional
 
 from env.a11y_env import A11yEnv
-from tasks.easy import run_task as easy
-from tasks.medium import run_task as medium
-from tasks.hard import run_task as hard
+from tasks.easy import run_task as easy, get_easy_elements, MAX_STEPS as EASY_MAX_STEPS
+from tasks.medium import run_task as medium, get_medium_elements, MAX_STEPS as MEDIUM_MAX_STEPS
+from tasks.hard import run_task as hard, get_hard_elements, MAX_STEPS as HARD_MAX_STEPS
 
 # ✅ app defined
 app = FastAPI()
@@ -58,29 +58,18 @@ def run_baseline():
 # -------------------------------
 @app.post("/grader")
 def grader(req: GradeRequest):
+    task_config = {
+        "easy": (get_easy_elements, EASY_MAX_STEPS),
+        "medium": (get_medium_elements, MEDIUM_MAX_STEPS),
+        "hard": (get_hard_elements, HARD_MAX_STEPS),
+    }
 
-    if req.task == "easy":
-        elements = [
-            {"id": "img_1", "type": "img", "attributes": {}}
-        ]
-
-    elif req.task == "medium":
-        elements = [
-            {"id": "img_1", "type": "img", "attributes": {}},
-            {"id": "btn_1", "type": "button", "attributes": {}}
-        ]
-
-    elif req.task == "hard":
-        elements = [
-            {"id": "root", "type": "html", "attributes": {}},
-            {"id": "img_1", "type": "img", "attributes": {}},
-            {"id": "btn_1", "type": "button", "attributes": {}}
-        ]
-
-    else:
+    config = task_config.get(req.task)
+    if config is None:
         return {"error": "Invalid task"}
 
-    env = A11yEnv(elements)
+    get_elements, max_steps = config
+    env = A11yEnv(get_elements(), max_steps=max_steps)
     state = env.reset()
 
     total_reward = 0

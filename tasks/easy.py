@@ -1,12 +1,19 @@
 from env.a11y_env import A11yEnv
 
 
-def run_task():
-    elements = [
+MAX_STEPS = 8
+
+
+def get_easy_elements():
+    return [
         {"id": "img1", "type": "img", "attributes": {}}
     ]
 
-    env = A11yEnv(elements, max_steps=5)
+
+def run_task():
+    elements = get_easy_elements()
+
+    env = A11yEnv(elements, max_steps=MAX_STEPS)
 
     state = env.reset()
 
@@ -30,4 +37,7 @@ def run_task():
     # ✅ Finish
     state, _, _, _ = env.step(("done",))
 
-    return state["score"]
+    return {
+        "score": state["score"],
+        "steps": state["step_count"],
+    }
