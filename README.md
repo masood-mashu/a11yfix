@@ -60,6 +60,49 @@ Custom project endpoints:
 - `GET /baseline`: baseline run across easy/medium/hard tasks
 - `POST /grader`: score a submitted action sequence
 
+### `/grader` payload examples (current schema)
+
+Valid example (returns `200`):
+
+```json
+{
+	"task": "easy",
+	"actions": [
+		{
+			"action": "audit",
+			"target": "",
+			"attribute": "",
+			"value": ""
+		},
+		{
+			"action": "set_attribute",
+			"target": "img1",
+			"attribute": "alt",
+			"value": "A scenic mountain view"
+		}
+	]
+}
+```
+
+Invalid example (returns `422` because field names do not match current schema):
+
+```json
+{
+	"task_id": "easy",
+	"actions": [
+		{
+			"type": "audit"
+		},
+		{
+			"type": "set_attribute",
+			"element_id": "img1",
+			"attribute": "alt",
+			"value": "A scenic mountain view"
+		}
+	]
+}
+```
+
 ## Local run
 
 ```bash
