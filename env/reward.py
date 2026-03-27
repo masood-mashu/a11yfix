@@ -25,7 +25,8 @@ def compute_reward(prev_violations, curr_violations, action_type, valid_action=T
         if curr_violations == 0:
             return 1.0
         else:
-            return -0.2
+            # Strong penalty prevents early "done" from being a viable shortcut.
+            return -1.0
 
     # ---------- SET ATTRIBUTE ----------
     if curr_violations < prev_violations:

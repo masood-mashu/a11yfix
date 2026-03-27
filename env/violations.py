@@ -26,8 +26,8 @@ def detect_violations(elements):
         elif element_type == "button":
             violations += check_button_name(element_id, attributes)
 
-        elif element_type == "html":
-            violations += check_lang(elements)
+    # Evaluate document-level language rule once per snapshot.
+    violations += check_lang(elements)
 
     return violations
 

@@ -1,3 +1,4 @@
+from copy import deepcopy
 from typing import Any
 
 from openenv.core import Action, Environment, Observation, State
@@ -38,13 +39,16 @@ except TypeError:
 class A11yEnv(A11yEnvironmentBase):
     def __init__(self, elements, max_steps=20):
         super().__init__()
-        self.initial_elements = elements
+        # Store an immutable episode template to prevent cross-episode drift.
+        self.initial_elements = deepcopy(elements)
         self.max_steps = max_steps
+        self._terminated = False
         self.reset()
 
     def reset(self, seed=None, episode_id=None, **kwargs) -> A11yObservation:
-        self.elements = [el.copy() for el in self.initial_elements]
+        self.elements = deepcopy(self.initial_elements)
         self.step_count = 0
+        self._terminated = False
 
         self.violations = detect_violations(self.elements)
         self.initial_violation_count = len(self.violations)
@@ -53,15 +57,15 @@ class A11yEnv(A11yEnvironmentBase):
         return self._last_observation
 
     def state(self) -> A11yObservation:
-        return self._get_observation(done=False, reward=None, audit=[])
+        return self._get_observation(done=self._terminated, reward=None, audit=[])
 
     def _get_observation(self, done: bool = False, reward=None, audit=None) -> A11yObservation:
         return A11yObservation(
-            elements=self.elements,
+            elements=deepcopy(self.elements),
             score=self._compute_score(),
             step_count=self.step_count,
             max_steps=self.max_steps,
-            audit=audit or [],
+            audit=deepcopy(audit or []),
             done=done,
             reward=reward,
         )
@@ -100,6 +104,10 @@ class A11yEnv(A11yEnvironmentBase):
         return A11yAction(operation="invalid")
 
     def step(self, action: A11yAction, **kwargs) -> A11yObservation:
+        if self._terminated:
+            # Terminal latch: keep returning the same terminal state.
+            return self._last_observation.model_copy(deep=True)
+
         action = self._normalize_action(action)
         self.step_count += 1
 
@@ -133,6 +141,8 @@ class A11yEnv(A11yEnvironmentBase):
                 done = True
 
             obs = self._get_observation(done=done, reward=reward, audit=audit_result)
+            if done:
+                self._terminated = True
             self._last_observation = obs
             return obs
 
@@ -155,5 +165,7 @@ class A11yEnv(A11yEnvironmentBase):
             done = True
 
         obs = self._get_observation(done=done, reward=reward, audit=[])
+        if done:
+            self._terminated = True
         self._last_observation = obs
         return obs

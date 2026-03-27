@@ -24,7 +24,7 @@ observation_space:
 # ---------- ACTION SPACE ----------
 action_space:
   type: object
-  description: Tuple-based action system
+  description: Structured action API (set_attribute, audit, done) with tuple compatibility
   actions:
     - set_attribute
     - audit
@@ -47,11 +47,11 @@ tasks:
   - id: medium
     description: Fix mixed violations across multiple elements
     difficulty: medium
-    max_steps: 6
+    max_steps: 3
     entry_point: tasks.medium:run_task
 
   - id: hard
     description: Fix multiple violations with limited steps and dependencies
     difficulty: hard
-    max_steps: 12
+    max_steps: 8
     entry_point: tasks.hard:run_task
