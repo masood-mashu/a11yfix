@@ -171,6 +171,28 @@ python inference.py
 - Maximum active sessions is 128.
 - Eviction is stale least-recently-used first, then least-recently-used if no stale session exists.
 
+## Release verification (March 29, 2026)
+
+Release status: GO (behavior-first), with a known Hugging Face metadata lag caveat.
+
+Verified evidence:
+
+- Local validation:
+  - `pytest -q`: 16 passed
+  - `openenv validate`: `[OK] a11yfix: Ready for multi-mode deployment`
+- Live reliability checks (public Space), 3 consecutive persistent-session runs:
+  - `POST /reset` -> `POST /step` (`audit`) -> `GET /state` -> `GET /baseline`
+  - Continuity gate: pass (`state.step_count == 1`)
+  - State schema gate: pass (`elements`, `score`, `step_count`, `max_steps`, `audit`, `done`, `reward`)
+  - Baseline schema gate: pass (`model`, `mode`, `summary`, `results`)
+  - Baseline value gate: pass (`summary.easy=1.0`, `summary.medium=1.0`, `summary.hard=0.82`)
+- Cookie hardening observed live:
+  - `Set-Cookie` includes `HttpOnly`, `SameSite=lax`, `Secure`, `Max-Age=1800`
+
+Operational caveat:
+
+- HF API metadata may temporarily report `runtime_sha` and `stage` values that lag behind observed live behavior during rollout. Final release signoff here is based on repeated live gate passes.
+
 ### `/grader` payload examples (current schema)
 
 Valid example (returns `200`):
