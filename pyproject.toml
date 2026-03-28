@@ -1,0 +1,21 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "a11yfix"
+version = "1.0.0"
+description = "OpenEnv environment for repairing web accessibility violations in a JSON DOM."
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "fastapi",
+    "httpx",
+    "openai",
+    "openenv-core",
+    "pydantic",
+    "uvicorn",
+]
+
+[project.scripts]
+server = "server.app:main"

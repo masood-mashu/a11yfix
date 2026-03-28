@@ -1,5 +1,5 @@
 import json
-import os
+from dataclasses import dataclass
 from typing import Any
 
 from openai import OpenAI
@@ -32,6 +32,20 @@ Respond with ONLY a JSON object and no markdown.
 Example:
 {\"operation\": \"set_attribute\", \"element_id\": \"img1\", \"attribute\": \"alt\", \"value\": \"Company logo\"}
 """
+
+DEFAULT_MODEL_NAME = "offline-rule-baseline"
+VIOLATION_ATTR_MAP = {
+    "missing_alt": "alt",
+    "missing_label": "aria-label",
+    "missing_button_name": "text",
+    "missing_lang": "lang",
+}
+
+
+@dataclass
+class LLMRunnerConfig:
+    client: OpenAI
+    model_name: str
 
 
 def _strip_markdown_fences(text: str) -> str:
@@ -76,12 +90,12 @@ def _parse_llm_action(content: str) -> A11yAction:
     return A11yAction(operation=operation)
 
 
-def _get_client() -> OpenAI:
-    api_key = os.environ.get("OPENAI_API_KEY")
-    return OpenAI(api_key=api_key)
-
-
-def _llm_choose_action(violations: list[dict[str, Any]], score: float, steps_remaining: int) -> A11yAction:
+def _llm_choose_action(
+    violations: list[dict[str, Any]],
+    score: float,
+    steps_remaining: int,
+    runner: LLMRunnerConfig,
+) -> A11yAction:
     user_prompt = (
         "Current violations:\n"
         f"{json.dumps(violations, indent=2)}\n\n"
@@ -90,9 +104,8 @@ def _llm_choose_action(violations: list[dict[str, Any]], score: float, steps_rem
         "Choose one next action."
     )
 
-    client = _get_client()
-    response = client.chat.completions.create(
-        model="gpt-4o-mini",
+    response = runner.client.chat.completions.create(
+        model=runner.model_name,
         temperature=0,
         messages=[
             {"role": "system", "content": SYSTEM_PROMPT},
@@ -112,13 +125,6 @@ def _offline_run_task(task_name: str, elements: list[dict[str, Any]], max_steps:
     total_reward = 0.0
     history: list[dict[str, Any]] = []
 
-    violation_attr_map = {
-        "missing_alt": "alt",
-        "missing_label": "aria-label",
-        "missing_button_name": "text",
-        "missing_lang": "lang",
-    }
-
     observation = env.step(A11yAction(operation="audit"))
     total_reward += float(observation.reward or 0.0)
     history.append(
@@ -136,7 +142,7 @@ def _offline_run_task(task_name: str, elements: list[dict[str, Any]], max_steps:
         if observation.done:
             break
 
-        attr = violation_attr_map.get(violation.get("type", ""))
+        attr = VIOLATION_ATTR_MAP.get(violation.get("type", ""))
         if not attr:
             continue
 
@@ -184,8 +190,13 @@ def _offline_run_task(task_name: str, elements: list[dict[str, Any]], max_steps:
     }
 
 
-def run_task_with_llm(task_name: str, elements: list[dict[str, Any]], max_steps: int) -> dict[str, Any]:
-    if not os.environ.get("OPENAI_API_KEY"):
+def run_task_with_runner(
+    task_name: str,
+    elements: list[dict[str, Any]],
+    max_steps: int,
+    runner: LLMRunnerConfig | None = None,
+) -> dict[str, Any]:
+    if runner is None:
         return _offline_run_task(task_name, elements, max_steps)
 
     env = A11yEnv(elements, max_steps=max_steps)
@@ -207,13 +218,7 @@ def run_task_with_llm(task_name: str, elements: list[dict[str, Any]], max_steps:
     )
 
     violations = list(observation.audit)
-    violation_attr_map = {
-        "missing_alt": "alt",
-        "missing_label": "aria-label",
-        "missing_button_name": "text",
-        "missing_lang": "lang",
-    }
-    attr_violation_map = {v: k for k, v in violation_attr_map.items()}
+    attr_violation_map = {value: key for key, value in VIOLATION_ATTR_MAP.items()}
 
     while not observation.done and violations:
         steps_remaining = max(0, observation.max_steps - observation.step_count)
@@ -222,15 +227,15 @@ def run_task_with_llm(task_name: str, elements: list[dict[str, Any]], max_steps:
             violations=violations,
             score=float(observation.score),
             steps_remaining=steps_remaining,
+            runner=runner,
         )
 
         if action.operation != "set_attribute":
-            # Keep the loop focused on repairs after a single upfront audit.
             candidate = violations[0]
             action = A11yAction(
                 operation="set_attribute",
                 element_id=str(candidate.get("element_id", "")),
-                attribute=violation_attr_map.get(str(candidate.get("type", "")), ""),
+                attribute=VIOLATION_ATTR_MAP.get(str(candidate.get("type", "")), ""),
                 value="fixed",
             )
 
@@ -250,10 +255,11 @@ def run_task_with_llm(task_name: str, elements: list[dict[str, Any]], max_steps:
         if action.operation == "set_attribute":
             fixed_violation_type = attr_violation_map.get(action.attribute, "")
             violations = [
-                v for v in violations
+                violation
+                for violation in violations
                 if not (
-                    str(v.get("element_id", "")) == action.element_id
-                    and str(v.get("type", "")) == fixed_violation_type
+                    str(violation.get("element_id", "")) == action.element_id
+                    and str(violation.get("type", "")) == fixed_violation_type
                 )
             ]
 
@@ -269,11 +275,15 @@ def run_task_with_llm(task_name: str, elements: list[dict[str, Any]], max_steps:
     }
 
 
-def run_all_tasks() -> dict[str, Any]:
+def run_all_tasks(
+    runner: LLMRunnerConfig | None = None,
+    *,
+    model_name: str | None = None,
+) -> dict[str, Any]:
     results = {
-        "easy": run_task_with_llm("easy", get_easy_elements(), EASY_MAX_STEPS),
-        "medium": run_task_with_llm("medium", get_medium_elements(), MEDIUM_MAX_STEPS),
-        "hard": run_task_with_llm("hard", get_hard_elements(), HARD_MAX_STEPS),
+        "easy": run_task_with_runner("easy", get_easy_elements(), EASY_MAX_STEPS, runner=runner),
+        "medium": run_task_with_runner("medium", get_medium_elements(), MEDIUM_MAX_STEPS, runner=runner),
+        "hard": run_task_with_runner("hard", get_hard_elements(), HARD_MAX_STEPS, runner=runner),
     }
 
     summary = {
@@ -283,18 +293,17 @@ def run_all_tasks() -> dict[str, Any]:
     }
 
     return {
-        "model": "gpt-4o-mini",
-        "mode": "llm" if os.environ.get("OPENAI_API_KEY") else "offline_fallback",
+        "model": model_name or DEFAULT_MODEL_NAME,
+        "mode": "llm" if runner is not None else "offline_fallback",
         "summary": summary,
         "results": results,
     }
 
 
-def run_baseline() -> dict:
-    """Alias for run_all_tasks() - hackathon spec compatibility."""
+def run_baseline() -> dict[str, Any]:
+    """Alias for the reproducible local baseline used by the API."""
     return run_all_tasks()
 
 
 if __name__ == "__main__":
-    output = run_all_tasks()
-    print(json.dumps(output, indent=2))
+    print(json.dumps(run_baseline(), indent=2))

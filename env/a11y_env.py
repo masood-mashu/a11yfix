@@ -30,6 +30,15 @@ class A11yObservation(Observation):
         return getattr(self, key)
 
 
+class A11yState(State):
+    elements: list[dict]
+    score: float
+    max_steps: int
+    audit: list = Field(default_factory=list)
+    done: bool = False
+    reward: float = 0.0
+
+
 try:
     A11yEnvironmentBase = Environment[A11yAction, A11yObservation]
 except TypeError:
@@ -56,8 +65,17 @@ class A11yEnv(A11yEnvironmentBase):
         self._last_observation = self._get_observation()
         return self._last_observation
 
-    def state(self) -> A11yObservation:
-        return self._get_observation(done=self._terminated, reward=0.0, audit=[])
+    @property
+    def state(self) -> A11yState:
+        return A11yState(
+            elements=deepcopy(self.elements),
+            score=self._compute_score(),
+            step_count=self.step_count,
+            max_steps=self.max_steps,
+            audit=[],
+            done=self._terminated,
+            reward=0.0,
+        )
 
     def _get_observation(self, done: bool = False, reward=None, audit=None) -> A11yObservation:
         reward_value = 0.0 if reward is None else float(reward)
@@ -170,7 +188,6 @@ class A11yEnv(A11yEnvironmentBase):
             self._terminated = True
         self._last_observation = obs
         return obs
-
 
 def create_default_env() -> "A11yEnv":
     from tasks.hard import MAX_STEPS as HARD_MAX_STEPS

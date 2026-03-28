@@ -111,6 +111,7 @@ Custom project endpoints:
 - `GET /tasks`: task list + action schema
 - `GET /baseline`: baseline run across easy/medium/hard tasks
 - `POST /grader`: score a submitted action sequence
+- `GET /state`: serialized current environment state
 
 ## Tasks and difficulty
 
@@ -126,20 +127,49 @@ Current task sources:
 - `tasks/medium.py`
 - `tasks/hard.py`
 
-## Baseline scores (current)
+## Baseline scores (current, reproducible offline fallback)
 
-`GET /baseline` and `python -m tasks.run_all_tasks` currently report:
+`GET /baseline` and `python baseline_inference.py` currently report:
 
 | Task | Score | Steps used |
 |---|---:|---:|
-| Easy | 1.0 | 2 |
-| Medium | 1.0 | 4 |
-| Hard | 0.91 | 10 |
+| Easy | 1.0 | 3 |
+| Medium | 1.0 | 5 |
+| Hard | 0.82 | 10 |
 
 Interpretation:
 
-- Baseline uses a task-aware optimal strategy for this benchmark configuration.
-- Medium and hard still remain useful for model evaluation because generic agents can waste steps (for example, unnecessary audit or incorrect attribute guesses).
+- The reproducible API baseline is an offline rule-based fallback that performs one audit, applies deterministic fixes, and submits `done` when possible.
+- The hard task intentionally cannot be fully solved within the current 10-step budget after paying the audit cost, so the deterministic fallback tops out at `0.82`.
+
+## Submission inference entrypoint
+
+The hackathon submission entrypoint is root `inference.py`.
+
+Required environment variables:
+
+- `API_BASE_URL`
+- `MODEL_NAME`
+- `HF_TOKEN`
+
+The script uses:
+
+```python
+OpenAI(base_url=API_BASE_URL, api_key=HF_TOKEN)
+```
+
+Run it with:
+
+```bash
+python inference.py
+```
+
+## Session policy
+
+- HTTP episode state is stored in memory per client session.
+- Default session TTL is 30 minutes.
+- Maximum active sessions is 128.
+- Eviction is stale least-recently-used first, then least-recently-used if no stale session exists.
 
 ### `/grader` payload examples (current schema)
 
@@ -213,6 +243,7 @@ python test_env.py
 python -m tasks.run_all_tasks
 python demo/run_demo.py
 python baseline_inference.py
+python inference.py
 ```
 
 ## Docker
