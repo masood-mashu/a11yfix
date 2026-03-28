@@ -185,7 +185,10 @@ class SessionContextMiddleware:
                 response_headers.append(
                     (
                         b"set-cookie",
-                        f"{SESSION_COOKIE_NAME}={session_id}; Path=/; HttpOnly; SameSite=lax".encode("latin-1"),
+                        (
+                            f"{SESSION_COOKIE_NAME}={session_id}; Path=/; HttpOnly; "
+                            f"SameSite=lax; Secure; Max-Age={SESSION_TTL_SECONDS}"
+                        ).encode("latin-1"),
                     )
                 )
                 message["headers"] = response_headers

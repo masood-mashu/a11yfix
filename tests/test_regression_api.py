@@ -12,7 +12,7 @@ from inference import build_submission_runner, load_inference_config
 class RegressionAPITests(unittest.TestCase):
     def setUp(self):
         session_env_manager.reset_for_tests()
-        self.client = TestClient(app)
+        self.client = TestClient(app, base_url="https://testserver")
 
     def tearDown(self):
         session_env_manager.reset_for_tests()
@@ -134,6 +134,16 @@ class RegressionAPITests(unittest.TestCase):
         self.assertEqual(state_response.status_code, 200)
         self.assertEqual(state_response.json()["step_count"], 1)
 
+    def test_session_cookie_sets_secure_and_max_age(self):
+        response = self.client.post("/reset")
+
+        self.assertEqual(response.status_code, 200)
+        set_cookie = response.headers.get("set-cookie", "")
+        self.assertIn("HttpOnly", set_cookie)
+        self.assertIn("SameSite=lax", set_cookie)
+        self.assertIn("Secure", set_cookie)
+        self.assertIn("Max-Age=1800", set_cookie)
+
     def test_state_reflects_mutation_after_set_attribute(self):
         self._reset()
         audit_response = self.client.post("/step", json={"action": {"operation": "audit"}})
@@ -163,8 +173,8 @@ class RegressionAPITests(unittest.TestCase):
         self.assertEqual(img1["attributes"]["alt"], "fixed")
 
     def test_multi_client_sessions_are_isolated(self):
-        client_a = TestClient(app)
-        client_b = TestClient(app)
+        client_a = TestClient(app, base_url="https://testserver")
+        client_b = TestClient(app, base_url="https://testserver")
 
         self.assertEqual(client_a.post("/reset").status_code, 200)
         self.assertEqual(client_b.post("/reset").status_code, 200)
@@ -251,6 +261,20 @@ class RegressionAPITests(unittest.TestCase):
         self.assertEqual(config.hf_token, "hf_test_token")
         self.assertEqual(runner.model_name, "meta/test-model")
         self.assertEqual(runner.client.api_key, "hf_test_token")
+
+    def test_openenv_global_max_steps_matches_default_reset_budget(self):
+        yaml_text = Path("openenv.yaml").read_text(encoding="utf-8")
+
+        yaml_max_steps = None
+        for line in yaml_text.splitlines():
+            if line.startswith("max_steps:"):
+                yaml_max_steps = int(line.split(":", 1)[1].strip())
+                break
+
+        self.assertIsNotNone(yaml_max_steps)
+
+        reset_body = self.client.post("/reset").json()
+        self.assertEqual(reset_body["observation"]["max_steps"], yaml_max_steps)
 
 
 if __name__ == "__main__":

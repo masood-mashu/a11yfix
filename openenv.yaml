@@ -37,7 +37,7 @@ action_space:
 reward_range: [-1.0, 1.0]
 
 # ---------- GLOBAL SETTINGS ----------
-max_steps: 12
+max_steps: 10
 
 # ---------- TASKS (CRITICAL) ----------
 tasks:
