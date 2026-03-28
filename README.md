@@ -115,8 +115,8 @@ Custom project endpoints:
 | Task | Violations at reset | Step budget | Difficulty intent |
 |---|---:|---:|---|
 | Easy | 1 | 8 | Basic single-fix flow |
-| Medium | 3 | 3 | Tight budget, requires efficient sequence |
-| Hard | 8 | 8 | Multi-element repair under full-budget pressure |
+| Medium | 3 | 5 | Tight budget, requires efficient sequence |
+| Hard | 8 | 12 | Multi-element repair under full-budget pressure |
 
 Current task sources:
 
@@ -131,8 +131,8 @@ Current task sources:
 | Task | Score | Steps used |
 |---|---:|---:|
 | Easy | 1.0 | 1 |
-| Medium | 1.0 | 3 |
-| Hard | 1.0 | 8 |
+| Medium | 1.0 | 4 |
+| Hard | 1.0 | 9 |
 
 Interpretation:
 

@@ -47,11 +47,11 @@ tasks:
   - id: medium
     description: Fix mixed violations across multiple elements
     difficulty: medium
-    max_steps: 3
+    max_steps: 5
     entry_point: tasks.medium:run_task
 
   - id: hard
     description: Fix multiple violations with limited steps and dependencies
     difficulty: hard
-    max_steps: 8
+    max_steps: 12
     entry_point: tasks.hard:run_task

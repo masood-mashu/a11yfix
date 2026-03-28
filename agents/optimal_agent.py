@@ -43,6 +43,10 @@ class OptimalAgent:
             )
             total_reward += float(observation.reward or 0.0)
 
+        if not observation.done:
+            observation = self.env.step(A11yAction(operation="done"))
+            total_reward += float(observation.reward or 0.0)
+
         return {
             "score": observation.score,
             "total_reward": round(total_reward, 3),

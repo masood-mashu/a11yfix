@@ -194,22 +194,45 @@ def run_task_with_llm(task_name: str, elements: list[dict[str, Any]], max_steps:
     total_reward = 0.0
     history: list[dict[str, Any]] = []
 
-    while not observation.done:
-        audit_observation = env.step(A11yAction(operation="audit"))
-        total_reward += float(audit_observation.reward or 0.0)
+    observation = env.step(A11yAction(operation="audit"))
+    total_reward += float(observation.reward or 0.0)
+    history.append(
+        {
+            "step": int(observation.step_count),
+            "action": {"operation": "audit"},
+            "reward": float(observation.reward or 0.0),
+            "score": float(observation.score),
+            "done": bool(observation.done),
+        }
+    )
 
-        if audit_observation.done:
-            observation = audit_observation
-            break
+    violations = list(observation.audit)
+    violation_attr_map = {
+        "missing_alt": "alt",
+        "missing_label": "aria-label",
+        "missing_button_name": "text",
+        "missing_lang": "lang",
+    }
+    attr_violation_map = {v: k for k, v in violation_attr_map.items()}
 
-        violations = audit_observation.audit
-        steps_remaining = max(0, audit_observation.max_steps - audit_observation.step_count)
+    while not observation.done and violations:
+        steps_remaining = max(0, observation.max_steps - observation.step_count)
 
         action = _llm_choose_action(
             violations=violations,
-            score=float(audit_observation.score),
+            score=float(observation.score),
             steps_remaining=steps_remaining,
         )
+
+        if action.operation != "set_attribute":
+            # Keep the loop focused on repairs after a single upfront audit.
+            candidate = violations[0]
+            action = A11yAction(
+                operation="set_attribute",
+                element_id=str(candidate.get("element_id", "")),
+                attribute=violation_attr_map.get(str(candidate.get("type", "")), ""),
+                value="fixed",
+            )
 
         observation = env.step(action)
         total_reward += float(observation.reward or 0.0)
@@ -223,6 +246,16 @@ def run_task_with_llm(task_name: str, elements: list[dict[str, Any]], max_steps:
                 "done": bool(observation.done),
             }
         )
+
+        if action.operation == "set_attribute":
+            fixed_violation_type = attr_violation_map.get(action.attribute, "")
+            violations = [
+                v for v in violations
+                if not (
+                    str(v.get("element_id", "")) == action.element_id
+                    and str(v.get("type", "")) == fixed_violation_type
+                )
+            ]
 
     return {
         "task": task_name,

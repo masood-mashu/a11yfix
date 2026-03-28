@@ -2,7 +2,7 @@ from agents.optimal_agent import OptimalAgent
 from env.a11y_env import A11yEnv
 
 
-MAX_STEPS = 8
+MAX_STEPS = 12
 
 
 def get_hard_elements():
