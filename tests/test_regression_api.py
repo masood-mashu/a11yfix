@@ -102,6 +102,26 @@ class RegressionAPITests(unittest.TestCase):
         self.assertEqual(body["step_count"], 0)
         self.assertEqual(body["score"], 0.0)
 
+    def test_exactly_one_get_state_route_is_registered_and_returns_typed_fields(self):
+        state_routes = [
+            route
+            for route in app.router.routes
+            if getattr(route, "path", None) == "/state"
+            and "GET" in getattr(route, "methods", set())
+        ]
+
+        self.assertEqual(len(state_routes), 1)
+
+        self._reset()
+        response = self.client.get("/state")
+        body = response.json()
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("step_count", body)
+        self.assertIn("elements", body)
+        self.assertIn("score", body)
+        self.assertIn("max_steps", body)
+
     def test_state_reflects_live_step_progress_after_audit(self):
         self._reset()
         step_response = self.client.post("/step", json={"action": {"operation": "audit"}})
@@ -192,6 +212,26 @@ class RegressionAPITests(unittest.TestCase):
 
         self.assertEqual(state_a.step_count, 0)
         self.assertEqual(manager.session_count(), 2)
+
+    def test_session_manager_ttl_expiry_evicts_stale_session_deterministically(self):
+        clock = [100.0]
+        manager = SessionEnvManager(ttl_seconds=30, max_sessions=5, clock=lambda: clock[0])
+
+        token = CURRENT_SESSION_ID.set("session-a")
+        env_a = manager.get_current_env()
+        env_a.reset()
+        env_a.step(("audit",))
+        CURRENT_SESSION_ID.reset(token)
+
+        self.assertEqual(manager.session_count(), 1)
+
+        clock[0] = 131.0
+        token = CURRENT_SESSION_ID.set("session-a")
+        state_a = manager.get_current_state()
+        CURRENT_SESSION_ID.reset(token)
+
+        self.assertEqual(state_a.step_count, 0)
+        self.assertEqual(manager.session_count(), 1)
 
     def test_inference_uses_hf_token_contract_without_openai_api_key(self):
         with mock.patch.dict(
