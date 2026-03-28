@@ -6,6 +6,8 @@ colorTo: green
 sdk: docker
 app_file: app.py
 pinned: false
+tags:
+  - openenv
 ---
 
 # A11yFix: Web Accessibility Repair Lab (OpenEnv)
@@ -116,7 +118,7 @@ Custom project endpoints:
 |---|---:|---:|---|
 | Easy | 1 | 8 | Basic single-fix flow |
 | Medium | 3 | 5 | Tight budget, requires efficient sequence |
-| Hard | 8 | 12 | Multi-element repair under full-budget pressure |
+| Hard | 10 | 10 | Impossible to audit all; demands perfect execution |
 
 Current task sources:
 
@@ -132,7 +134,7 @@ Current task sources:
 |---|---:|---:|
 | Easy | 1.0 | 2 |
 | Medium | 1.0 | 4 |
-| Hard | 1.0 | 9 |
+| Hard | 0.91 | 10 |
 
 Interpretation:
 

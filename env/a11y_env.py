@@ -56,7 +56,6 @@ class A11yEnv(A11yEnvironmentBase):
         self._last_observation = self._get_observation()
         return self._last_observation
 
-    @property
     def state(self) -> A11yObservation:
         return self._get_observation(done=self._terminated, reward=0.0, audit=[])
 

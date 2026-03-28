@@ -56,5 +56,5 @@ tasks:
   - id: hard
     description: Fix multiple violations with limited steps and dependencies
     difficulty: hard
-    max_steps: 12
+    max_steps: 10
     entry_point: tasks.hard:run_task

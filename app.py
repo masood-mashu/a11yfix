@@ -122,15 +122,8 @@ def get_tasks():
 
 @app.get("/baseline")
 def run_baseline():
-    from tasks.easy import run_task as run_easy
-    from tasks.medium import run_task as run_medium
-    from tasks.hard import run_task as run_hard
-
-    return {
-        "easy": run_easy(),
-        "medium": run_medium(),
-        "hard": run_hard(),
-    }
+    from baseline_inference import run_all_tasks
+    return run_all_tasks()
 
 
 @app.post("/grader")
