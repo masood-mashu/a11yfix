@@ -56,9 +56,11 @@ def check_input_labels(element_id, attributes):
 
 def check_button_name(element_id, attributes):
     has_text = attributes.get("text", "").strip()
+    has_aria_label = attributes.get("aria-label", "").strip()
+    has_aria_labelledby = attributes.get("aria-labelledby", "").strip()
 
-    # Dependency: ONLY text resolves violation
-    if not has_text:
+    # Accessible name can come from visible text or ARIA name attributes.
+    if not (has_text or has_aria_label or has_aria_labelledby):
         return [{
             "type": "missing_button_name",
             "element_id": element_id
@@ -76,20 +78,3 @@ def check_lang(elements):
                     "element_id": el["id"]
                 }]
     return []
-
-
-# ---------- TEST ----------
-
-if __name__ == "__main__":
-    elements = [
-        {"id": "img1", "type": "img", "attributes": {}},
-        {"id": "input1", "type": "input", "attributes": {}},
-        {"id": "btn1", "type": "button", "attributes": {}},
-        {"id": "root", "type": "html", "attributes": {}}
-    ]
-
-    violations = detect_violations(elements)
-
-    print("Violations:")
-    for v in violations:
-        print(v)

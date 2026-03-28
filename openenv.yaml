@@ -13,6 +13,9 @@ observation_space:
     elements:
       type: array
       description: JSON DOM elements
+    audit:
+      type: array
+      description: Violations returned only when audit action is used
     score:
       type: number
       description: Accessibility score between 0 and 1
@@ -34,7 +37,7 @@ action_space:
 reward_range: [-1.0, 1.0]
 
 # ---------- GLOBAL SETTINGS ----------
-max_steps: 20
+max_steps: 12
 
 # ---------- TASKS (CRITICAL) ----------
 tasks:

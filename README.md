@@ -130,7 +130,7 @@ Current task sources:
 
 | Task | Score | Steps used |
 |---|---:|---:|
-| Easy | 1.0 | 1 |
+| Easy | 1.0 | 2 |
 | Medium | 1.0 | 4 |
 | Hard | 1.0 | 9 |
 
