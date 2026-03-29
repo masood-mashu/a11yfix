@@ -61,13 +61,13 @@ while not obs.done:
         wrong_action = A11yAction(
             operation="set_attribute",
             element_id=v["element_id"],
-            attribute="aria-label",
-            value="wrong",
+            attribute="class",
+            value="highlight",
         )
 
         obs = env.step(wrong_action)
 
-        print("\n❌ Trying WRONG fix →", wrong_action)
+        print("\n❌ Trying WRONG fix (non-accessibility attribute) →", wrong_action)
         print("📈 Score:", obs.score, "| Reward:", obs.reward)
 
         tried_wrong = True
