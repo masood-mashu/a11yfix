@@ -16,9 +16,9 @@ print("\nAfter Audit:")
 print("Audit:", obs["audit"])
 print("Reward:", obs.reward)
 
-# Step 2: WRONG action (aria-label first)
-obs = env.step(("set_attribute", "btn1", "aria-label", "Click"))
-print("\nAfter WRONG action (aria-label first):")
+# Step 2: WRONG action (non-accessibility attribute)
+obs = env.step(("set_attribute", "btn1", "class", "highlight"))
+print("\nAfter WRONG action (class first):")
 print("Score:", obs["score"])
 print("Reward:", obs.reward)
 

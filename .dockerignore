@@ -10,7 +10,6 @@ __pycache__
 .venv
 .venv_clean
 venv
-env
 artifacts
 demo/__pycache__
 tests/__pycache__

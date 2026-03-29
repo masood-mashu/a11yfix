@@ -137,7 +137,7 @@ Custom project endpoints:
 |---|---:|---:|---|
 | Easy | 1 | 8 | Basic single-fix flow |
 | Medium | 3 | 6 | Tight budget, requires efficient sequence with minimal wasted actions |
-| Hard | 9 | 10 | Full-coverage repair under a tight step budget |
+| Hard | 8 | 10 | Full-coverage repair under a tight step budget |
 
 Current task sources:
 

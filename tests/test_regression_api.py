@@ -6,7 +6,7 @@ from unittest import mock
 from fastapi.testclient import TestClient
 
 from app import CURRENT_SESSION_ID, SessionEnvManager, app, session_env_manager
-from baseline_inference import run_baseline
+from baseline_inference import LLMRunnerConfig, run_baseline, run_task_with_runner
 from env.a11y_env import A11yAction, A11yEnv
 from tasks.easy import get_easy_elements
 from inference import build_submission_runner, load_inference_config
@@ -316,6 +316,25 @@ class RegressionAPITests(unittest.TestCase):
         self.assertEqual(summary["easy"], 1.0)
         self.assertEqual(summary["medium"], 1.0)
         self.assertEqual(summary["hard"], 1.0)
+
+    def test_llm_runner_path_submits_done_after_fixing_all_known_violations(self):
+        fake_client = mock.Mock()
+        fake_client.chat.completions.create.return_value = mock.Mock(
+            choices=[
+                mock.Mock(
+                    message=mock.Mock(
+                        content='{"operation":"set_attribute","element_id":"img1","attribute":"alt","value":"Company logo"}'
+                    )
+                )
+            ]
+        )
+        runner = LLMRunnerConfig(client=fake_client, model_name="fake-model")
+
+        result = run_task_with_runner("easy", get_easy_elements(), 8, runner=runner)
+
+        self.assertTrue(result["done"])
+        self.assertEqual(result["final_score"], 1.0)
+        self.assertEqual(result["history"][-1]["action"]["operation"], "done")
 
 
 if __name__ == "__main__":

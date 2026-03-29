@@ -270,6 +270,20 @@ def run_task_with_runner(
                 )
             ]
 
+    if not observation.done:
+        done_action = A11yAction(operation="done")
+        observation = env.step(done_action)
+        total_reward += float(observation.reward or 0.0)
+        history.append(
+            {
+                "step": int(observation.step_count),
+                "action": done_action.model_dump(),
+                "reward": float(observation.reward or 0.0),
+                "score": float(observation.score),
+                "done": bool(observation.done),
+            }
+        )
+
     return {
         "task": task_name,
         "mode": "llm",

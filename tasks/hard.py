@@ -13,7 +13,6 @@ def get_hard_elements(seed=None):
             {"id": "img1",   "type": "img",    "attributes": {}},
             {"id": "img2",   "type": "img",    "attributes": {}},
             {"id": "img3",   "type": "img",    "attributes": {}},
-            {"id": "img4",   "type": "img",    "attributes": {}},
             {"id": "btn1",   "type": "button", "attributes": {}},
             {"id": "btn2",   "type": "button", "attributes": {}},
             {"id": "input1", "type": "input",  "attributes": {}},
@@ -21,7 +20,7 @@ def get_hard_elements(seed=None):
         ]
 
     rng = Random(seed)
-    image_ids = rng.sample(["img1", "img2", "img3", "img4", "imgHero", "imgPromo"], 4)
+    image_ids = rng.sample(["img1", "img2", "img3", "img4", "imgHero", "imgPromo"], 3)
     button_ids = rng.sample(["btn1", "btn2", "btn3", "btnSearch", "btnCheckout"], 2)
     input_ids = rng.sample(["input1", "input2", "input3", "inputSearch", "inputEmail"], 2)
 
