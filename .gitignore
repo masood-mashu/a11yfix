@@ -6,3 +6,4 @@ __pycache__/
 .gitignore
 verify_hf_space.ps1
 .tmp_hackathon_meta/
+_uvicorn_*.txt
