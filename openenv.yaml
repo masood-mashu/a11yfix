@@ -54,7 +54,7 @@ tasks:
     entry_point: tasks.medium:run_task
 
   - id: hard
-    description: Fix multiple violations with limited steps and dependencies
+    description: Fix multiple violations across all element types within a tight step budget
     difficulty: hard
     max_steps: 10
     entry_point: tasks.hard:run_task

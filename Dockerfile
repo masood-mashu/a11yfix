@@ -8,7 +8,7 @@ WORKDIR /app
 COPY . .
 
 # Install dependencies
-RUN pip install --no-cache-dir fastapi uvicorn pydantic openenv-core openai
+RUN pip install --no-cache-dir -r requirements.txt
 
 # Expose port
 EXPOSE 7860

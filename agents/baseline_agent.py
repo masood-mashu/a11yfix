@@ -1,5 +1,12 @@
 from env.a11y_env import A11yAction
 
+VIOLATION_VALUE_MAP = {
+    "missing_alt": "Descriptive image",
+    "missing_label": "Form input",
+    "missing_button_name": "Submit form",
+    "missing_lang": "en",
+}
+
 
 class BaselineAgent:
     """
@@ -47,7 +54,7 @@ class BaselineAgent:
                     operation="set_attribute",
                     element_id=v["element_id"],
                     attribute=attr,
-                    value="fixed",
+                    value=VIOLATION_VALUE_MAP.get(v["type"], "Accessible value"),
                 )
                 observation = self.env.step(action)
                 total_reward += float(observation.reward or 0.0)

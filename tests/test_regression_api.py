@@ -6,6 +6,9 @@ from unittest import mock
 from fastapi.testclient import TestClient
 
 from app import CURRENT_SESSION_ID, SessionEnvManager, app, session_env_manager
+from baseline_inference import run_baseline
+from env.a11y_env import A11yAction, A11yEnv
+from tasks.easy import get_easy_elements
 from inference import build_submission_runner, load_inference_config
 
 
@@ -156,7 +159,7 @@ class RegressionAPITests(unittest.TestCase):
                     "operation": "set_attribute",
                     "element_id": "img1",
                     "attribute": "alt",
-                    "value": "fixed",
+                    "value": "Company logo",
                 }
             },
         )
@@ -170,7 +173,7 @@ class RegressionAPITests(unittest.TestCase):
         self.assertEqual(body["step_count"], 2)
         self.assertGreater(body["score"], 0.0)
         img1 = next(element for element in body["elements"] if element["id"] == "img1")
-        self.assertEqual(img1["attributes"]["alt"], "fixed")
+        self.assertEqual(img1["attributes"]["alt"], "Company logo")
 
     def test_multi_client_sessions_are_isolated(self):
         client_a = TestClient(app, base_url="https://testserver")
@@ -275,6 +278,44 @@ class RegressionAPITests(unittest.TestCase):
 
         reset_body = self.client.post("/reset").json()
         self.assertEqual(reset_body["observation"]["max_steps"], yaml_max_steps)
+
+    def test_placeholder_fix_values_do_not_clear_easy_task_violation(self):
+        env = A11yEnv(get_easy_elements(), max_steps=8)
+        env.reset()
+
+        observation = env.step(
+            A11yAction(
+                operation="set_attribute",
+                element_id="img1",
+                attribute="alt",
+                value="fixed",
+            )
+        )
+
+        self.assertEqual(observation.score, 0.0)
+        self.assertFalse(observation.done)
+
+    def test_meaningful_fix_values_clear_easy_task_violation(self):
+        env = A11yEnv(get_easy_elements(), max_steps=8)
+        env.reset()
+
+        observation = env.step(
+            A11yAction(
+                operation="set_attribute",
+                element_id="img1",
+                attribute="alt",
+                value="Company logo",
+            )
+        )
+
+        self.assertEqual(observation.score, 1.0)
+
+    def test_baseline_summary_remains_reproducible_after_value_hardening(self):
+        summary = run_baseline()["summary"]
+
+        self.assertEqual(summary["easy"], 1.0)
+        self.assertEqual(summary["medium"], 1.0)
+        self.assertEqual(summary["hard"], 1.0)
 
 
 if __name__ == "__main__":

@@ -9,6 +9,13 @@ VIOLATION_ATTR_MAP = {
     "missing_lang": "lang",
 }
 
+VIOLATION_VALUE_MAP = {
+    "missing_alt": "Accessible image",
+    "missing_label": "Search field",
+    "missing_button_name": "Submit",
+    "missing_lang": "en",
+}
+
 
 class OptimalAgent:
     """Task-aware rule agent that skips audit and applies direct fixes."""
@@ -38,7 +45,7 @@ class OptimalAgent:
                     operation="set_attribute",
                     element_id=element_id,
                     attribute=attr,
-                    value="fixed",
+                    value=VIOLATION_VALUE_MAP.get(violation.get("type", ""), "Accessible value"),
                 )
             )
             total_reward += float(observation.reward or 0.0)

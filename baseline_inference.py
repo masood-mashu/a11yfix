@@ -41,6 +41,13 @@ VIOLATION_ATTR_MAP = {
     "missing_lang": "lang",
 }
 
+VIOLATION_VALUE_MAP = {
+    "missing_alt": "Accessible image",
+    "missing_label": "Search field",
+    "missing_button_name": "Submit",
+    "missing_lang": "en",
+}
+
 
 @dataclass
 class LLMRunnerConfig:
@@ -150,7 +157,7 @@ def _offline_run_task(task_name: str, elements: list[dict[str, Any]], max_steps:
             operation="set_attribute",
             element_id=str(violation.get("element_id", "")),
             attribute=attr,
-            value="fixed",
+            value=VIOLATION_VALUE_MAP.get(str(violation.get("type", "")), "Accessible value"),
         )
         observation = env.step(action)
         total_reward += float(observation.reward or 0.0)
@@ -236,7 +243,7 @@ def run_task_with_runner(
                 operation="set_attribute",
                 element_id=str(candidate.get("element_id", "")),
                 attribute=VIOLATION_ATTR_MAP.get(str(candidate.get("type", "")), ""),
-                value="fixed",
+                value=VIOLATION_VALUE_MAP.get(str(candidate.get("type", "")), "Accessible value"),
             )
 
         observation = env.step(action)
