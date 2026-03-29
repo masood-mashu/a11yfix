@@ -3,7 +3,7 @@ from env.a11y_env import A11yEnv
 from random import Random
 
 
-MAX_STEPS = 5
+MAX_STEPS = 6
 
 
 def get_medium_elements(seed=None):

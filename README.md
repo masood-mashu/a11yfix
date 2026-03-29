@@ -16,12 +16,17 @@ A11yFix is an OpenEnv-style reinforcement learning environment where agents repa
 
 Agents interact through a small action API and are scored by how many violations they resolve within a step budget.
 
+Why RL here:
+
+- Accessibility repair is sequential, not just classificatory: agents must decide when to spend a step on discovery, which issue to prioritize next, and when to stop.
+- The environment rewards efficient repair under limited budget, which makes it a better fit for agent planning and policy evaluation than a one-shot static classifier benchmark.
+
 ## Judge Quick Read
 
 - Real-world task: sequential web accessibility repair over a JSON DOM, not a game or toy environment.
 - OpenEnv contract: typed action/observation models, `step()` / `reset()` / `state()` endpoints, `openenv.yaml`, 3 graded tasks.
 - Submission readiness: Hugging Face Space deployment, Dockerfile, deterministic offline baseline, session continuity, and regression coverage.
-- Review artifacts: [`artifacts/reproducibility_report.json`](/D:/hackathon/a11yfix/artifacts/reproducibility_report.json) captures repeated baseline runs and seeded variant support.
+- Review artifacts: [`artifacts/reproducibility_report.json`](artifacts/reproducibility_report.json) captures repeated baseline runs and seeded variant support.
 
 ## What the environment does
 
@@ -131,7 +136,7 @@ Custom project endpoints:
 | Task | Violations at reset | Step budget | Difficulty intent |
 |---|---:|---:|---|
 | Easy | 1 | 8 | Basic single-fix flow |
-| Medium | 3 | 5 | Tight budget, requires efficient sequence |
+| Medium | 3 | 6 | Tight budget, requires efficient sequence with minimal wasted actions |
 | Hard | 9 | 10 | Full-coverage repair under a tight step budget |
 
 Current task sources:
@@ -184,7 +189,7 @@ Run it with:
 python inference.py
 ```
 
-For local setup, copy values from [`.env.example`](/D:/hackathon/a11yfix/.env.example) into your environment before running the submission path.
+For local setup, copy values from [`.env.example`](.env.example) into your environment before running the submission path.
 
 ## Session policy
 
@@ -299,7 +304,7 @@ docker build -t a11yfix .
 docker run -p 7860:7860 a11yfix
 ```
 
-Docker uses the checked-in [requirements.txt](/D:/hackathon/a11yfix/requirements.txt) so local and container installs resolve from the same dependency list.
+Docker uses the checked-in [`requirements.txt`](requirements.txt) so local and container installs resolve from the same dependency list.
 
 ## Why this project is useful
 

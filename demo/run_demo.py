@@ -78,7 +78,7 @@ while not obs.done:
         operation="set_attribute",
         element_id=v["element_id"],
         attribute=VIOLATION_ATTR_MAP[v["type"]],
-        value="fixed",
+        value="Accessible element",
     )
 
     obs = env.step(action)
