@@ -205,7 +205,7 @@ Release status: GO for the checked-in revision, with a known Hugging Face rollou
 Verified evidence:
 
 - Local validation:
-  - `python -m pytest -q`: 22 passed
+  - `python -m pytest -q`: 23 passed
   - `openenv validate`: `[OK] a11yfix: Ready for multi-mode deployment`
   - `python reproducibility_report.py`: deterministic summary `easy=1.0`, `medium=1.0`, `hard=1.0`
 - Live reliability checks (public Space), 3 consecutive persistent-session runs:
@@ -213,7 +213,7 @@ Verified evidence:
   - Continuity gate: pass (`state.step_count == 1`)
   - State schema gate: pass (`elements`, `score`, `step_count`, `max_steps`, `audit`, `done`, `reward`)
   - Baseline schema gate: pass (`model`, `mode`, `summary`, `results`)
-  - Baseline value gate: re-run after each redeploy because public results can lag the checked-in revision during HF rollout
+  - Baseline value gate: pass (`easy=1.0`, `medium=1.0`, `hard=1.0`)
 - Cookie hardening observed live:
   - `Set-Cookie` includes `HttpOnly`, `SameSite=lax`, `Secure`, `Max-Age=1800`
 
@@ -291,7 +291,7 @@ uvicorn app:app --host 0.0.0.0 --port 7860
 ```bash
 python test_env.py
 python -m tasks.run_all_tasks
-python demo/run_demo.py
+python -m demo.run_demo
 python baseline_inference.py
 python reproducibility_report.py
 python inference.py

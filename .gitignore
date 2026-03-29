@@ -1,0 +1,8 @@
+venv/
+.venv_clean/
+__pycache__/
+*.pyc
+.git
+.gitignore
+verify_hf_space.ps1
+.tmp_hackathon_meta/
