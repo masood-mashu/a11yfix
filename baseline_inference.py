@@ -23,10 +23,10 @@ Available actions:
 3) done
 
 Violation-to-fix mapping:
-- missing_alt -> set_attribute with attribute=\"alt\"
-- missing_label -> set_attribute with attribute=\"aria-label\"
-- missing_button_name -> set_attribute with attribute=\"text\"
-- missing_lang -> set_attribute with attribute=\"lang\"
+- missing_alt -> set_attribute with attribute=\"alt\", value=\"Descriptive image\"
+- missing_label -> set_attribute with attribute=\"aria-label\", value=\"Form input\"
+- missing_button_name -> set_attribute with attribute=\"text\", value=\"Submit\"
+- missing_lang -> set_attribute with attribute=\"lang\", value=\"en\"
 
 Respond with ONLY a JSON object and no markdown.
 Example:
