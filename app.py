@@ -349,3 +349,20 @@ def grader(req: GradeRequest):
         "total_reward": float(total_reward),
         "done": bool(done),
     }
+
+
+@app.get("/", tags=["Health"])
+def root():
+    """Health check endpoint for the A11yFix environment."""
+    return {
+        "status": "ok",
+        "app": "A11yFix - Web Accessibility Repair Lab",
+        "version": "1.0.0",
+        "docs": "/docs",
+    }
+
+
+@app.get("/favicon.ico", tags=["Health"])
+def favicon():
+    """Favicon endpoint to suppress 404 logs."""
+    return {"detail": "No favicon"}  # minimal response
