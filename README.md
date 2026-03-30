@@ -83,6 +83,7 @@ Examples:
 	- `observation.step_count: int`
 	- `observation.max_steps: int`
 	- `observation.audit: list` (non-empty only for `audit` action)
+	- `observation.metadata: dict` (inherited from openenv-core's Action base class; always empty `{}`, can be ignored)
 	- `reward: float`
 	- `done: bool`
 
@@ -138,6 +139,10 @@ Custom project endpoints:
 - `POST /grader`: score a submitted action sequence
 - `GET /state`: serialized current environment state
 
+OpenEnv-injected endpoints:
+
+- `POST /mcp`: injected by openenv-core for MCP tool protocol support. Not part of the A11yFix task interface and can be ignored.
+
 ## Tasks and difficulty
 
 | Task | Violations at reset | Step budget | Optimal steps (no audit) | Baseline steps (audit-first) |
@@ -174,13 +179,13 @@ Current task sources:
 
 `GET /baseline` and `python baseline_inference.py` report:
 
-| Task | Score | Steps used | Budget | Total reward |
+| Task | Score | steps_used | Budget | Total reward |
 |---|---:|---:|---:|---:|
 | Easy | 1.0 | 3 | 8 | 1.15 |
 | Medium | 1.0 | 5 | 6 | 1.55 |
 | Hard | 1.0 | 10 | 10 | 2.55 |
 
-The baseline is an offline rule-based fallback: audit once, apply deterministic fixes in violation order, submit `done`. Verified deterministic across 5 repeated runs (`reproducibility_report.py`). Verified live on the public HF Space.
+The baseline is an offline rule-based fallback: audit once, apply deterministic fixes in violation order, submit `done`. It runs in **offline_fallback mode** (rule-based, no LLM required). No API key or `HF_TOKEN` needed to reproduce baseline scores locally with `python baseline_inference.py`. Verified deterministic across 5 repeated runs (`reproducibility_report.py`). Verified live on the public HF Space.
 
 ### Baseline step trace
 
