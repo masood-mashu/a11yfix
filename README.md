@@ -83,7 +83,6 @@ Examples:
 	- `observation.step_count: int`
 	- `observation.max_steps: int`
 	- `observation.audit: list` (non-empty only for `audit` action)
-	- `observation.metadata: dict` (inherited from openenv-core's Action base class; always empty `{}`, can be ignored)
 	- `reward: float`
 	- `done: bool`
 
@@ -91,6 +90,7 @@ Notes:
 
 - `audit` exposes hidden violations but consumes one environment step.
 - `done` can terminate early; final score is based on violation reduction.
+- Action history entries may include a `metadata` field inherited from openenv-core's Action base class. This field is always empty `{}` and can be ignored.
 
 ## Violation types currently modeled
 
