@@ -9,7 +9,7 @@ from app import CURRENT_SESSION_ID, SessionEnvManager, app, session_env_manager
 from baseline_inference import LLMRunnerConfig, run_baseline, run_task_with_runner
 from env.a11y_env import A11yAction, A11yEnv
 from tasks.easy import get_easy_elements
-from inference import build_submission_runner, load_inference_config
+
 
 
 class RegressionAPITests(unittest.TestCase):
@@ -245,25 +245,6 @@ class RegressionAPITests(unittest.TestCase):
 
         self.assertEqual(state_a.step_count, 0)
         self.assertEqual(manager.session_count(), 1)
-
-    def test_inference_uses_hf_token_contract_without_openai_api_key(self):
-        with mock.patch.dict(
-            "os.environ",
-            {
-                "API_BASE_URL": "https://router.huggingface.co/v1",
-                "MODEL_NAME": "meta/test-model",
-                "HF_TOKEN": "hf_test_token",
-            },
-            clear=True,
-        ):
-            config = load_inference_config()
-            runner = build_submission_runner(config)
-
-        self.assertEqual(config.api_base_url, "https://router.huggingface.co/v1")
-        self.assertEqual(config.model_name, "meta/test-model")
-        self.assertEqual(config.hf_token, "hf_test_token")
-        self.assertEqual(runner.model_name, "meta/test-model")
-        self.assertEqual(runner.client.api_key, "hf_test_token")
 
     def test_openenv_global_max_steps_matches_default_reset_budget(self):
         yaml_text = Path("openenv.yaml").read_text(encoding="utf-8")

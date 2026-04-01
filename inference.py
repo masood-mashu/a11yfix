@@ -1,55 +1,50 @@
 import json
 import os
 from dataclasses import dataclass
-
 from openai import OpenAI
+from baseline_inference import LLMRunnerConfig, run_task_with_runner
+from tasks.easy import get_easy_elements, MAX_STEPS as EASY_MAX_STEPS
+from tasks.medium import get_medium_elements, MAX_STEPS as MEDIUM_MAX_STEPS
+from tasks.hard import get_hard_elements, MAX_STEPS as HARD_MAX_STEPS
 
-from baseline_inference import LLMRunnerConfig, run_all_tasks
+API_BASE_URL = os.getenv("API_BASE_URL", "https://integrate.api.nvidia.com/v1")
+MODEL_NAME = os.getenv("MODEL_NAME", "meta/llama-3.1-8b-instruct")
+HF_TOKEN = os.getenv("HF_TOKEN") or os.getenv("API_KEY")
+BENCHMARK = "a11yfix"
 
+TASKS = [
+    ("easy",   get_easy_elements,   EASY_MAX_STEPS),
+    ("medium", get_medium_elements, MEDIUM_MAX_STEPS),
+    ("hard",   get_hard_elements,   HARD_MAX_STEPS),
+]
 
-@dataclass(frozen=True)
-class InferenceConfig:
-    api_base_url: str
-    model_name: str
-    hf_token: str
+def main():
+    client = OpenAI(base_url=API_BASE_URL, api_key=HF_TOKEN)
+    runner = LLMRunnerConfig(client=client, model_name=MODEL_NAME)
 
+    for task_name, get_elements, max_steps in TASKS:
+        print(f"[START] task={task_name} env={BENCHMARK} model={MODEL_NAME}", flush=True)
 
-def load_inference_config() -> InferenceConfig:
-    api_base_url = os.environ.get("API_BASE_URL")
-    model_name = os.environ.get("MODEL_NAME")
-    hf_token = os.environ.get("HF_TOKEN")
+        result = run_task_with_runner(task_name, get_elements(), max_steps, runner=runner)
+        history = result["history"]
+        rewards = [h["reward"] for h in history]
+        success = result["final_score"] >= 1.0
 
-    missing = [
-        name
-        for name, value in (
-            ("API_BASE_URL", api_base_url),
-            ("MODEL_NAME", model_name),
-            ("HF_TOKEN", hf_token),
+        for h in history:
+            action_str = json.dumps(h["action"])
+            done_str = str(h["done"]).lower()
+            print(
+                f"[STEP] step={h['step']} action={action_str} "
+                f"reward={h['reward']:.2f} done={done_str} error=null",
+                flush=True,
+            )
+
+        rewards_str = ",".join(f"{r:.2f}" for r in rewards)
+        print(
+            f"[END] success={str(success).lower()} steps={result['steps_used']} "
+            f"score={result['final_score']:.3f} rewards={rewards_str}",
+            flush=True,
         )
-        if not value
-    ]
-    if missing:
-        missing_str = ", ".join(missing)
-        raise RuntimeError(f"Missing required environment variable(s): {missing_str}")
-
-    return InferenceConfig(
-        api_base_url=api_base_url,
-        model_name=model_name,
-        hf_token=hf_token,
-    )
-
-
-def build_submission_runner(config: InferenceConfig) -> LLMRunnerConfig:
-    client = OpenAI(base_url=config.api_base_url, api_key=config.hf_token)
-    return LLMRunnerConfig(client=client, model_name=config.model_name)
-
-
-def main() -> None:
-    config = load_inference_config()
-    runner = build_submission_runner(config)
-    result = run_all_tasks(runner=runner, model_name=config.model_name)
-    print(json.dumps(result, indent=2))
-
 
 if __name__ == "__main__":
     main()

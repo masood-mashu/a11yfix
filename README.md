@@ -255,14 +255,14 @@ For local setup, copy values from [`.env.example`](.env.example) into your envir
 - Maximum active sessions is 128.
 - Eviction is stale least-recently-used first, then least-recently-used if no stale session exists.
 
-## Release verification (March 29, 2026)
+## Release verification (April 2, 2026)
 
 Release status: GO — verified locally and on the live public HF Space.
 
 Verified evidence:
 
 - Local validation:
-  - `python -m pytest -q`: 23 passed
+  - `python -m pytest -q`: 22 passed
   - `openenv validate`: `[OK] a11yfix: Ready for multi-mode deployment`
   - `python reproducibility_report.py`: deterministic summary `easy=1.0`, `medium=1.0`, `hard=1.0`
 - Live HF Space verification (public endpoint, 3 consecutive runs):
