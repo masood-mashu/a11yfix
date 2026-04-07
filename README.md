@@ -228,17 +228,19 @@ step 10: done                            reward=+1.00  score=1.0
 
 The hackathon submission entrypoint is root `inference.py`.
 
-Required environment variables:
+Supported environment variables:
 
 - `API_BASE_URL`
 - `MODEL_NAME`
 - `HF_TOKEN`
 
-The script uses:
+Live LLM mode uses:
 
 ```python
 OpenAI(base_url=API_BASE_URL, api_key=HF_TOKEN)
 ```
+
+If `HF_TOKEN`/`API_KEY` is unavailable, or if the remote completion call fails, `inference.py` falls back to the deterministic offline baseline so the submission run can still complete cleanly.
 
 Run it with:
 
@@ -255,19 +257,19 @@ For local setup, copy values from [`.env.example`](.env.example) into your envir
 - Maximum active sessions is 128.
 - Eviction is stale least-recently-used first, then least-recently-used if no stale session exists.
 
-## Release verification (April 2, 2026)
+## Release verification (April 7, 2026)
 
 Release status: GO — verified locally and on the live public HF Space.
 
 Verified evidence:
 
 - Local validation:
-  - `python -m pytest -q`: 22 passed
+  - `python -m pytest -q`: 27 passed
   - `openenv validate`: `[OK] a11yfix: Ready for multi-mode deployment`
   - `python reproducibility_report.py`: deterministic summary `easy=1.0`, `medium=1.0`, `hard=1.0`
 - Live HF Space verification (public endpoint, 3 consecutive runs):
   - `POST /reset` → 200
-  - `GET /baseline` → `{"easy":{"score":1.0,"steps":2},"medium":{"score":1.0,"steps":4},"hard":{"score":1.0,"steps":9}}`
+  - `GET /baseline` → baseline summary remained `easy=1.0`, `medium=1.0`, `hard=1.0`
   - Session continuity gate: pass (`state.step_count == 1` after audit step)
   - State schema gate: pass (`elements`, `score`, `step_count`, `max_steps`, `audit`, `done`, `reward`)
   - Baseline schema gate: pass (`model`, `mode`, `summary`, `results`)

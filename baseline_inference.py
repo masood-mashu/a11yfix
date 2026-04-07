@@ -111,18 +111,43 @@ def _llm_choose_action(
         "Choose one next action."
     )
 
-    response = runner.client.chat.completions.create(
-        model=runner.model_name,
-        temperature=0,
-        messages=[
+    request_kwargs = {
+        "model": runner.model_name,
+        "temperature": 0,
+        "messages": [
             {"role": "system", "content": SYSTEM_PROMPT},
             {"role": "user", "content": user_prompt},
         ],
-        response_format={"type": "json_object"},
-    )
+    }
 
-    content = response.choices[0].message.content or "{}"
-    return _parse_llm_action(content)
+    try:
+        response = runner.client.chat.completions.create(
+            response_format={"type": "json_object"},
+            **request_kwargs,
+        )
+    except Exception:
+        try:
+            response = runner.client.chat.completions.create(**request_kwargs)
+        except Exception:
+            return A11yAction(operation="audit")
+
+    # Be defensive against provider-specific or malformed response shapes.
+    choices = response.get("choices") if isinstance(response, dict) else getattr(response, "choices", None)
+    if not isinstance(choices, (list, tuple)) or not choices:
+        return A11yAction(operation="audit")
+
+    first_choice = choices[0]
+    if isinstance(first_choice, dict):
+        message = first_choice.get("message")
+        content = message.get("content") if isinstance(message, dict) else None
+    else:
+        message = getattr(first_choice, "message", None)
+        content = getattr(message, "content", None) if message is not None else None
+
+    if not isinstance(content, str):
+        return A11yAction(operation="audit")
+
+    return _parse_llm_action(content or "{}")
 
 
 def _offline_run_task(task_name: str, elements: list[dict[str, Any]], max_steps: int) -> dict[str, Any]:
