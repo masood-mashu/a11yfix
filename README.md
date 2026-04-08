@@ -1,6 +1,6 @@
 ---
 title: A11yFix
-emoji: "tool"
+emoji: "🛠️"
 colorFrom: blue
 colorTo: green
 sdk: docker
