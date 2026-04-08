@@ -79,7 +79,7 @@ Examples:
 
 - OpenEnv response payload includes:
 	- `observation.elements: list[dict]`
-	- `observation.score: float` (normalized, `0.0` to `1.0`)
+	- `observation.score: float` (normalized, strictly bounded inside `(0, 1)`; currently `0.001` to `0.999`)
 	- `observation.step_count: int`
 	- `observation.max_steps: int`
 	- `observation.audit: list` (non-empty only for `audit` action)
@@ -151,7 +151,7 @@ OpenEnv-injected endpoints:
 | Medium | 3 | 6 | 4 | 5 |
 | Hard | 8 | 10 | 9 | 10 |
 
-**Hard task note:** the audit-first baseline uses all 10 steps exactly (1 audit + 8 fixes + 1 done). An LLM agent that audits first has zero step slack — it must fix every violation without any wasted actions to score 1.0. An agent that skips audit (like `OptimalAgent`) has 1 step of headroom.
+**Hard task note:** the audit-first baseline uses all 10 steps exactly (1 audit + 8 fixes + 1 done). An LLM agent that audits first has zero step slack — it must fix every violation without any wasted actions to reach the capped solved score of `0.999`. An agent that skips audit (like `OptimalAgent`) has 1 step of headroom.
 
 Current task sources:
 
@@ -181,9 +181,9 @@ Current task sources:
 
 | Task | Score | steps_used | Budget | Total reward |
 |---|---:|---:|---:|---:|
-| Easy | 1.0 | 3 | 8 | 1.15 |
-| Medium | 1.0 | 5 | 6 | 1.55 |
-| Hard | 1.0 | 10 | 10 | 2.55 |
+| Easy | 0.999 | 3 | 8 | 1.15 |
+| Medium | 0.999 | 5 | 6 | 1.55 |
+| Hard | 0.999 | 10 | 10 | 2.55 |
 
 The baseline is an offline rule-based fallback: audit once, apply deterministic fixes in violation order, submit `done`. It runs in **offline_fallback mode** (rule-based, no LLM required). No API key or `HF_TOKEN` needed to reproduce baseline scores locally with `python baseline_inference.py`. Verified deterministic across 5 repeated runs (`reproducibility_report.py`). Verified live on the public HF Space.
 
@@ -191,32 +191,32 @@ The baseline is an offline rule-based fallback: audit once, apply deterministic 
 
 **Easy** (budget=8):
 ```
-step 1: audit                          reward=-0.05  score=0.0
-step 2: set_attribute(img1, alt)       reward=+0.20  score=1.0
-step 3: done                           reward=+1.00  score=1.0
+step 1: audit                          reward=-0.05  score=0.001
+step 2: set_attribute(img1, alt)       reward=+0.20  score=0.999
+step 3: done                           reward=+1.00  score=0.999
 ```
 
 **Medium** (budget=6):
 ```
-step 1: audit                          reward=-0.05  score=0.0
-step 2: set_attribute(img1, alt)       reward=+0.20  score=0.33
-step 3: set_attribute(btn1, text)      reward=+0.20  score=0.67
-step 4: set_attribute(input1, aria-label) reward=+0.20 score=1.0
-step 5: done                           reward=+1.00  score=1.0
+step 1: audit                          reward=-0.05  score=0.001
+step 2: set_attribute(img1, alt)       reward=+0.20  score=0.333
+step 3: set_attribute(btn1, text)      reward=+0.20  score=0.667
+step 4: set_attribute(input1, aria-label) reward=+0.20 score=0.999
+step 5: done                           reward=+1.00  score=0.999
 ```
 
 **Hard** (budget=10):
 ```
-step 1:  audit                           reward=-0.05  score=0.0
-step 2:  set_attribute(img1, alt)        reward=+0.20  score=0.12
-step 3:  set_attribute(img2, alt)        reward=+0.20  score=0.25
-step 4:  set_attribute(img3, alt)        reward=+0.20  score=0.38
-step 5:  set_attribute(btn1, text)       reward=+0.20  score=0.50
-step 6:  set_attribute(btn2, text)       reward=+0.20  score=0.62
-step 7:  set_attribute(input1, aria-label) reward=+0.20 score=0.75
-step 8:  set_attribute(input2, aria-label) reward=+0.20 score=0.88
-step 9:  set_attribute(root, lang)       reward=+0.20  score=1.0
-step 10: done                            reward=+1.00  score=1.0
+step 1:  audit                           reward=-0.05  score=0.001
+step 2:  set_attribute(img1, alt)        reward=+0.20  score=0.125
+step 3:  set_attribute(img2, alt)        reward=+0.20  score=0.250
+step 4:  set_attribute(img3, alt)        reward=+0.20  score=0.375
+step 5:  set_attribute(btn1, text)       reward=+0.20  score=0.500
+step 6:  set_attribute(btn2, text)       reward=+0.20  score=0.625
+step 7:  set_attribute(input1, aria-label) reward=+0.20 score=0.750
+step 8:  set_attribute(input2, aria-label) reward=+0.20 score=0.875
+step 9:  set_attribute(root, lang)       reward=+0.20  score=0.999
+step 10: done                            reward=+1.00  score=0.999
 ```
 
 ## Optional task variation
@@ -266,14 +266,14 @@ Verified evidence:
 - Local validation:
   - `python -m pytest -q`: 27 passed
   - `openenv validate`: `[OK] a11yfix: Ready for multi-mode deployment`
-  - `python reproducibility_report.py`: deterministic summary `easy=1.0`, `medium=1.0`, `hard=1.0`
+  - `python reproducibility_report.py`: deterministic summary `easy=0.999`, `medium=0.999`, `hard=0.999`
 - Live HF Space verification (public endpoint, 3 consecutive runs):
   - `POST /reset` → 200
-  - `GET /baseline` → baseline summary remained `easy=1.0`, `medium=1.0`, `hard=1.0`
+  - `GET /baseline` → baseline summary remained `easy=0.999`, `medium=0.999`, `hard=0.999`
   - Session continuity gate: pass (`state.step_count == 1` after audit step)
   - State schema gate: pass (`elements`, `score`, `step_count`, `max_steps`, `audit`, `done`, `reward`)
   - Baseline schema gate: pass (`model`, `mode`, `summary`, `results`)
-  - Baseline value gate: pass (`easy=1.0`, `medium=1.0`, `hard=1.0`)
+  - Baseline value gate: pass (`easy=0.999`, `medium=0.999`, `hard=0.999`)
 - Cookie hardening observed live:
   - `Set-Cookie` includes `HttpOnly`, `SameSite=lax`, `Secure`, `Max-Age=1800`
 

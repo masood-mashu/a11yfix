@@ -34,7 +34,7 @@ def build_runner():
 def emit_result(result):
     history = result["history"]
     rewards = [h["reward"] for h in history]
-    success = result["final_score"] >= 1.0
+    success = float(result["final_score"]) >= 0.999
 
     for h in history:
         action_str = json.dumps(h["action"])

@@ -15,17 +15,23 @@ from tasks.medium import run_task as run_medium
 class OptimalAgentTaskTests(unittest.TestCase):
     def test_easy_task_is_perfect_and_within_budget(self):
         result = run_easy()
-        self.assertEqual(result["score"], 1.0)
+        self.assertGreater(result["score"], 0.0)
+        self.assertLess(result["score"], 1.0)
+        self.assertAlmostEqual(result["score"], 0.999, places=3)
         self.assertLessEqual(result["steps"], EASY_MAX_STEPS)
 
     def test_medium_task_is_perfect_and_within_budget(self):
         result = run_medium()
-        self.assertEqual(result["score"], 1.0)
+        self.assertGreater(result["score"], 0.0)
+        self.assertLess(result["score"], 1.0)
+        self.assertAlmostEqual(result["score"], 0.999, places=3)
         self.assertLessEqual(result["steps"], MEDIUM_MAX_STEPS)
 
     def test_hard_task_is_perfect_and_within_budget(self):
         result = run_hard()
-        self.assertEqual(result["score"], 1.0)
+        self.assertGreater(result["score"], 0.0)
+        self.assertLess(result["score"], 1.0)
+        self.assertAlmostEqual(result["score"], 0.999, places=3)
         self.assertLessEqual(result["steps"], HARD_MAX_STEPS)
 
     def test_seeded_task_variants_are_deterministic_per_seed(self):
@@ -42,9 +48,9 @@ class OptimalAgentTaskTests(unittest.TestCase):
         report = build_reproducibility_report(num_runs=3, seed_samples=(0, 1))
 
         self.assertTrue(report["baseline_deterministic"])
-        self.assertEqual(report["baseline_summary"]["easy"], 1.0)
-        self.assertEqual(report["baseline_summary"]["medium"], 1.0)
-        self.assertEqual(report["baseline_summary"]["hard"], 1.0)
+        self.assertAlmostEqual(report["baseline_summary"]["easy"], 0.999, places=3)
+        self.assertAlmostEqual(report["baseline_summary"]["medium"], 0.999, places=3)
+        self.assertAlmostEqual(report["baseline_summary"]["hard"], 0.999, places=3)
         self.assertTrue(report["seeded_variants_distinct"]["easy"])
         self.assertTrue(report["seeded_variants_distinct"]["medium"])
         self.assertTrue(report["seeded_variants_distinct"]["hard"])

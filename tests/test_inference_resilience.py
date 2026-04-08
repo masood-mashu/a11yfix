@@ -13,7 +13,7 @@ def test_llm_runner_falls_back_to_offline_behavior_when_completion_call_raises()
     result = run_task_with_runner("easy", get_easy_elements(), 8, runner=runner)
 
     assert result["done"] is True
-    assert result["final_score"] == 1.0
+    assert result["final_score"] == 0.999
     assert result["history"][0]["action"]["operation"] == "audit"
     assert result["history"][-1]["action"]["operation"] == "done"
 
@@ -26,7 +26,7 @@ def test_llm_runner_falls_back_when_completion_returns_empty_choices():
     result = run_task_with_runner("easy", get_easy_elements(), 8, runner=runner)
 
     assert result["done"] is True
-    assert result["final_score"] == 1.0
+    assert result["final_score"] == 0.999
     assert result["history"][-1]["action"]["operation"] == "done"
 
 
@@ -40,7 +40,7 @@ def test_llm_runner_falls_back_when_choice_message_is_missing():
     result = run_task_with_runner("easy", get_easy_elements(), 8, runner=runner)
 
     assert result["done"] is True
-    assert result["final_score"] == 1.0
+    assert result["final_score"] == 0.999
     assert result["history"][-1]["action"]["operation"] == "done"
 
 
@@ -54,7 +54,7 @@ def test_llm_runner_falls_back_when_choice_content_is_missing():
     result = run_task_with_runner("easy", get_easy_elements(), 8, runner=runner)
 
     assert result["done"] is True
-    assert result["final_score"] == 1.0
+    assert result["final_score"] == 0.999
     assert result["history"][-1]["action"]["operation"] == "done"
 
 
@@ -66,5 +66,5 @@ def test_llm_runner_falls_back_when_completion_response_shape_is_unexpected():
     result = run_task_with_runner("easy", get_easy_elements(), 8, runner=runner)
 
     assert result["done"] is True
-    assert result["final_score"] == 1.0
+    assert result["final_score"] == 0.999
     assert result["history"][-1]["action"]["operation"] == "done"

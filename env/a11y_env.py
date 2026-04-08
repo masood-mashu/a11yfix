@@ -7,6 +7,9 @@ from pydantic import Field
 from env.reward import compute_reward
 from env.violations import detect_violations
 
+MIN_SCORE = 0.001
+MAX_SCORE = 0.999
+
 
 class A11yAction(Action):
     operation: str
@@ -93,12 +96,11 @@ class A11yEnv(A11yEnvironmentBase):
         current = len(detect_violations(self.elements))
 
         if self.initial_violation_count == 0:
-            return 1.0
+            return MAX_SCORE
 
-        return round(
-            (self.initial_violation_count - current) / self.initial_violation_count,
-            2,
-        )
+        raw_score = (self.initial_violation_count - current) / self.initial_violation_count
+        bounded_score = min(MAX_SCORE, max(MIN_SCORE, raw_score))
+        return round(bounded_score, 3)
 
     def _normalize_action(self, action: A11yAction) -> A11yAction:
         if isinstance(action, A11yAction):

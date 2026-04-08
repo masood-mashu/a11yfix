@@ -103,7 +103,9 @@ class RegressionAPITests(unittest.TestCase):
         self.assertIn("step_count", body)
         self.assertIn("max_steps", body)
         self.assertEqual(body["step_count"], 0)
-        self.assertEqual(body["score"], 0.0)
+        self.assertGreater(body["score"], 0.0)
+        self.assertLess(body["score"], 1.0)
+        self.assertAlmostEqual(body["score"], 0.001, places=3)
 
     def test_exactly_one_get_state_route_is_registered_and_returns_typed_fields(self):
         state_routes = [
@@ -273,7 +275,9 @@ class RegressionAPITests(unittest.TestCase):
             )
         )
 
-        self.assertEqual(observation.score, 0.0)
+        self.assertGreater(observation.score, 0.0)
+        self.assertLess(observation.score, 1.0)
+        self.assertAlmostEqual(observation.score, 0.001, places=3)
         self.assertFalse(observation.done)
 
     def test_meaningful_fix_values_clear_easy_task_violation(self):
@@ -289,14 +293,16 @@ class RegressionAPITests(unittest.TestCase):
             )
         )
 
-        self.assertEqual(observation.score, 1.0)
+        self.assertGreater(observation.score, 0.0)
+        self.assertLess(observation.score, 1.0)
+        self.assertAlmostEqual(observation.score, 0.999, places=3)
 
     def test_baseline_summary_remains_reproducible_after_value_hardening(self):
         summary = run_baseline()["summary"]
 
-        self.assertEqual(summary["easy"], 1.0)
-        self.assertEqual(summary["medium"], 1.0)
-        self.assertEqual(summary["hard"], 1.0)
+        self.assertAlmostEqual(summary["easy"], 0.999, places=3)
+        self.assertAlmostEqual(summary["medium"], 0.999, places=3)
+        self.assertAlmostEqual(summary["hard"], 0.999, places=3)
 
     def test_llm_runner_path_submits_done_after_fixing_all_known_violations(self):
         fake_client = mock.Mock()
@@ -314,7 +320,7 @@ class RegressionAPITests(unittest.TestCase):
         result = run_task_with_runner("easy", get_easy_elements(), 8, runner=runner)
 
         self.assertTrue(result["done"])
-        self.assertEqual(result["final_score"], 1.0)
+        self.assertAlmostEqual(result["final_score"], 0.999, places=3)
         self.assertEqual(result["history"][-1]["action"]["operation"], "done")
 
 
