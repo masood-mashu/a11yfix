@@ -2,9 +2,9 @@
   "baseline_runs": 5,
   "baseline_deterministic": true,
   "baseline_summary": {
-    "easy": 1.0,
-    "medium": 1.0,
-    "hard": 1.0
+    "easy": 0.999,
+    "medium": 0.999,
+    "hard": 0.999
   },
   "seeded_variant_support": {
     "easy": {
@@ -41,8 +41,7 @@
         "img:img4",
         "img:imgPromo",
         "img:img1",
-        "img:img2",
-        "button:btnCheckout",
+        "button:btn3",
         "button:btnSearch",
         "input:inputSearch",
         "input:input3"
@@ -52,9 +51,8 @@
         "img:img2",
         "img:imgHero",
         "img:img1",
-        "img:imgPromo",
+        "button:btn3",
         "button:btn1",
-        "button:btnSearch",
         "input:inputSearch",
         "input:inputEmail"
       ],
@@ -63,11 +61,10 @@
         "img:img1",
         "img:imgPromo",
         "img:imgHero",
-        "img:img2",
-        "button:btn2",
         "button:btn3",
+        "button:btn2",
         "input:input3",
-        "input:input2"
+        "input:inputEmail"
       ]
     }
   },
