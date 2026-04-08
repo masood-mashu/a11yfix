@@ -1,6 +1,6 @@
 ---
 title: A11yFix
-emoji: "🛠️"
+emoji: "tool"
 colorFrom: blue
 colorTo: green
 sdk: docker
@@ -127,13 +127,14 @@ OpenEnv app:
 
 `POST /step` payloads accepted:
 
-- Canonical OpenEnv shape: `{ "action": { "operation": "audit" } }` — **used by OpenAPI schema and standard clients**
-- Backward-compatible flat shape: `{ "operation": "audit" }` — compatibility layer for simplified payloads
+- Canonical OpenEnv shape: `{ "action": { "operation": "audit" } }` - **used by OpenAPI schema and standard clients**
+- Backward-compatible flat shape: `{ "operation": "audit" }` - compatibility layer for simplified payloads
 
 _Note: The OpenAPI schema (`/openapi.json`) reflects the canonical form. Flat payloads are supported at runtime but not exposed in the OpenAPI schema._
 
 Custom project endpoints:
 
+- `GET /`: health payload (`status`, `version`, `docs`) plus task list and score bounds
 - `GET /tasks`: task list + action schema
 - `GET /baseline`: baseline run across easy/medium/hard tasks
 - `POST /grader`: score a submitted action sequence
@@ -151,7 +152,7 @@ OpenEnv-injected endpoints:
 | Medium | 3 | 6 | 4 | 5 |
 | Hard | 8 | 10 | 9 | 10 |
 
-**Hard task note:** the audit-first baseline uses all 10 steps exactly (1 audit + 8 fixes + 1 done). An LLM agent that audits first has zero step slack — it must fix every violation without any wasted actions to reach the capped solved score of `0.999`. An agent that skips audit (like `OptimalAgent`) has 1 step of headroom.
+**Hard task note:** the audit-first baseline uses all 10 steps exactly (1 audit + 8 fixes + 1 done). An LLM agent that audits first has zero step slack - it must fix every violation without any wasted actions to reach the capped solved score of `0.999`. An agent that skips audit (like `OptimalAgent`) has 1 step of headroom.
 
 Current task sources:
 
@@ -161,19 +162,19 @@ Current task sources:
 
 ### Violation breakdown by task
 
-**Easy** — 1 violation:
+**Easy** - 1 violation:
 - `img1`: missing alt text
 
-**Medium** — 3 violations:
+**Medium** - 3 violations:
 - `img1`: missing alt text
 - `btn1`: missing button name
 - `input1`: missing input label
 
-**Hard** — 8 violations:
-- `img1`, `img2`, `img3`: missing alt text (×3)
-- `btn1`, `btn2`: missing button name (×2)
-- `input1`, `input2`: missing input label (×2)
-- `root`: missing document language (×1)
+**Hard** - 8 violations:
+- `img1`, `img2`, `img3`: missing alt text (x3)
+- `btn1`, `btn2`: missing button name (x2)
+- `input1`, `input2`: missing input label (x2)
+- `root`: missing document language (x1)
 
 ## Baseline scores (verified, live + local)
 
@@ -257,19 +258,19 @@ For local setup, copy values from [`.env.example`](.env.example) into your envir
 - Maximum active sessions is 128.
 - Eviction is stale least-recently-used first, then least-recently-used if no stale session exists.
 
-## Release verification (April 7, 2026)
+## Release verification (April 8, 2026)
 
-Release status: GO — verified locally and on the live public HF Space.
+Release status: GO - verified locally and on the live public HF Space.
 
 Verified evidence:
 
 - Local validation:
-  - `python -m pytest -q`: 27 passed
+  - `python -m pytest -q`: 28 passed
   - `openenv validate`: `[OK] a11yfix: Ready for multi-mode deployment`
   - `python reproducibility_report.py`: deterministic summary `easy=0.999`, `medium=0.999`, `hard=0.999`
 - Live HF Space verification (public endpoint, 3 consecutive runs):
-  - `POST /reset` → 200
-  - `GET /baseline` → baseline summary remained `easy=0.999`, `medium=0.999`, `hard=0.999`
+  - `POST /reset` -> 200
+  - `GET /baseline` -> baseline summary remained `easy=0.999`, `medium=0.999`, `hard=0.999`
   - Session continuity gate: pass (`state.step_count == 1` after audit step)
   - State schema gate: pass (`elements`, `score`, `step_count`, `max_steps`, `audit`, `done`, `reward`)
   - Baseline schema gate: pass (`model`, `mode`, `summary`, `results`)
@@ -365,3 +366,4 @@ Docker uses the checked-in [`requirements.txt`](requirements.txt) so local and c
 ## Why this project is useful
 
 A11yFix turns accessibility from static detection into sequential decision-making, making it a practical benchmark for repair-oriented agents.
+

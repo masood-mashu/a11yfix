@@ -18,7 +18,7 @@ observation_space:
       description: Violations returned only when audit action is used
     score:
       type: number
-      description: Accessibility score between 0 and 1
+      description: Accessibility score strictly between 0 and 1
     step_count:
       type: integer
     max_steps:

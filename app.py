@@ -359,6 +359,18 @@ def root():
         "app": "A11yFix - Web Accessibility Repair Lab",
         "version": "1.0.0",
         "docs": "/docs",
+        "tasks": ["easy", "medium", "hard"],
+        "score_bounds": {
+            "min": 0.001,
+            "max": 0.999,
+            "strict": True,
+        },
+        "endpoints": {
+            "state": "/state",
+            "tasks": "/tasks",
+            "baseline": "/baseline",
+            "grader": "/grader",
+        },
     }
 
 

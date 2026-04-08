@@ -44,6 +44,21 @@ class RegressionAPITests(unittest.TestCase):
         self.assertTrue(hasattr(env, "reset"))
         self.assertTrue(hasattr(env, "step"))
 
+    def test_root_health_payload_exposes_tasks_score_bounds_and_docs(self):
+        response = self.client.get("/")
+
+        self.assertEqual(response.status_code, 200)
+        body = response.json()
+
+        self.assertEqual(body["status"], "ok")
+        self.assertEqual(body["docs"], "/docs")
+        self.assertEqual(body["tasks"], ["easy", "medium", "hard"])
+        self.assertEqual(body["score_bounds"]["min"], 0.001)
+        self.assertEqual(body["score_bounds"]["max"], 0.999)
+        self.assertTrue(body["score_bounds"]["strict"])
+        self.assertEqual(body["endpoints"]["baseline"], "/baseline")
+        self.assertEqual(body["endpoints"]["grader"], "/grader")
+
     def test_step_timeout_validation_parity_flat_vs_nested(self):
         self._reset()
         nested = self.client.post(
